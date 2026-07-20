@@ -25,10 +25,8 @@ export default function App() {
 
   // Quick Seed Suggestions for immediate play
   const quickSeeds = [
-    { word: "روضة", desc: "روضة / حدائق عقارات", icon: "🏡" },
-    { word: "قلم", desc: "قلم / أدب وإبداع", icon: "✍️" },
-    { word: "بحر", desc: "بحر / شمول وتقنية", icon: "🌊" },
-    { word: "شمس", desc: "شمس / طاقة حيوية", icon: "☀️" }
+    { word: "روضة", desc: "روضة / حدائق عقارات" },
+    { word: "بحر", desc: "بحر / شمول وتقنية" },
   ];
 
   const handleStartTree = (word: string) => {
@@ -168,7 +166,6 @@ export default function App() {
                       onClick={() => handleStartTree(seed.word)}
                       className="bg-bg-panel hover:bg-bg-page border-2 border-border-main hover:border-accent p-3.5 rounded-2xl text-right cursor-pointer transition-all flex flex-col justify-between group"
                     >
-                      <span className="text-xl mb-2 block">{seed.icon}</span>
                       <div>
                         <p className="font-display font-bold text-text-main group-hover:text-accent transition-colors" dir="rtl">
                           {seed.word}
