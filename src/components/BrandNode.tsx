@@ -244,26 +244,69 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       initial={{ opacity: 0, scale: 0.95, y: -5 }}
                       animate={{ opacity: 1, scale: 1, y: 22 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                      className="absolute left-1/2 -translate-x-1/2 bg-bg-panel border-2 border-border-main rounded-2xl p-2 w-60 flex flex-col gap-1 z-[200] shadow-lg text-right"
+                      className="absolute left-1/2 -translate-x-1/2 bg-bg-panel border-2 border-border-main rounded-xl p-1.5 w-48 flex flex-col gap-1 z-[200] shadow-lg text-right"
                     >
+                      {/* 1. Any Tone (Default) */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setTone(null);
                           setShowToneMenu(false);
                         }}
-                        className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors flex items-center justify-between gap-2 ${
-                          tone === null ? "bg-accent-bg text-accent" : "text-text-muted hover:bg-bg-page hover:text-text-main"
+                        className={`w-full px-2 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-colors flex items-center justify-between gap-1 ${
+                          tone === null ? "bg-accent-bg text-accent font-semibold" : "text-text-muted hover:bg-bg-page hover:text-text-main"
                         }`}
                         dir="rtl"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <span>✨</span>
                           <span className="font-semibold text-text-main">أي طابع / نبرة</span>
                         </div>
-                        <span className="text-[10px] text-text-muted/80">بدون تصفية</span>
                       </button>
 
+                      {/* 2. Custom Tone (User Input) - Second choice */}
+                      <div 
+                        className={`px-2 py-0.5 bg-bg-page border rounded-lg flex gap-1 items-center transition-all ${
+                          tone && !currentTonePreset ? "border-accent bg-accent-bg text-accent" : "border-border-main/50 text-text-muted"
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                        dir="rtl"
+                      >
+                        <input
+                          type="text"
+                          placeholder="نبرة مخصصة..."
+                          value={customToneInput}
+                          onChange={(e) => setCustomToneInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (customToneInput.trim()) {
+                                setTone(customToneInput.trim());
+                                setShowToneMenu(false);
+                              }
+                            }
+                          }}
+                          className="flex-1 min-w-0 bg-transparent text-[11px] py-0.5 outline-none text-text-main font-sans text-right"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (customToneInput.trim()) {
+                              setTone(customToneInput.trim());
+                              setShowToneMenu(false);
+                            }
+                          }}
+                          className="shrink-0 px-1.5 py-0.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-md text-[10px] transition-colors cursor-pointer"
+                        >
+                          تأكيد
+                        </button>
+                      </div>
+
+                      {/* Separator */}
+                      <div className="border-t border-border-main/30 my-0.5" />
+
+                      {/* 3. Tone Presets */}
                       {TONE_PRESETS.map((t) => (
                         <button
                           key={t.id}
@@ -272,71 +315,15 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                             setTone(t.id);
                             setShowToneMenu(false);
                           }}
-                          className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors flex flex-col items-end gap-0.5 ${
-                            tone === t.id ? "bg-accent-bg text-accent" : "text-text-muted hover:bg-bg-page hover:text-text-main"
+                          className={`w-full px-2 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-colors flex items-center justify-start gap-1.5 ${
+                            tone === t.id ? "bg-accent-bg text-accent font-semibold" : "text-text-muted hover:bg-bg-page hover:text-text-main"
                           }`}
                           dir="rtl"
                         >
-                          <div className="flex items-center gap-1.5 w-full justify-start text-right">
-                            <span className="text-sm">{t.emoji}</span>
-                            <span className="font-semibold text-text-main">{t.label}</span>
-                          </div>
-                          <p className="text-[10px] text-text-muted font-normal leading-tight text-right w-full pr-5">{t.description}</p>
+                          <span className="text-sm">{t.emoji}</span>
+                          <span className="text-text-main text-[11px]">{t.label}</span>
                         </button>
                       ))}
-
-                      {/* Display Custom Tone if selected and not a preset */}
-                      {tone && !currentTonePreset && (
-                        <div className="px-3 py-1.5 rounded-xl bg-accent-bg text-accent text-xs font-bold flex items-center justify-between" dir="rtl">
-                          <span className="truncate">نبرة حالية: {tone}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTone(null);
-                            }}
-                            className="text-accent/60 hover:text-accent font-bold px-1"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Manual Tone Input Section */}
-                      <div className="border-t border-border-main/50 my-1 pt-1.5" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-[10px] font-bold text-text-muted/80 block mb-1 text-right px-2.5">نبرة مخصصة (كتابة يدوية):</span>
-                        <div className="flex gap-1 px-1 w-full items-center justify-between">
-                          <input
-                            type="text"
-                            placeholder="مثلاً: حماسي، غامض..."
-                            value={customToneInput}
-                            onChange={(e) => setCustomToneInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                if (customToneInput.trim()) {
-                                  setTone(customToneInput.trim());
-                                  setShowToneMenu(false);
-                                }
-                              }
-                            }}
-                            className="flex-1 min-w-0 px-2 py-1 bg-bg-page border border-border-main rounded-lg text-xs outline-none focus:border-accent text-text-main font-sans text-right"
-                            dir="rtl"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (customToneInput.trim()) {
-                                setTone(customToneInput.trim());
-                                setShowToneMenu(false);
-                              }
-                            }}
-                            className="shrink-0 px-2.5 py-1 bg-accent hover:bg-accent-hover text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
-                          >
-                            تأكيد
-                          </button>
-                        </div>
-                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
