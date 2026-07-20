@@ -285,8 +285,8 @@ export default function App() {
                     initial={{ x: 320, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 320, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="h-full bg-bg-panel border-l-2 border-border-main flex flex-col shrink-0 z-40 relative"
+                    transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                    className="absolute top-0 right-0 h-full bg-bg-panel border-l-2 border-border-main flex flex-col z-50 shadow-2xl"
                     style={{ width: "320px" }}
                   >
                     <div className="p-5 flex flex-col h-full min-w-[320px]">

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash } from "lucide-react";
+import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, Check } from "lucide-react";
 import { BrandNodeData, TONE_PRESETS, TonePreset } from "../types";
 
 export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
@@ -15,6 +15,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   // Local constraints set via satellite circles before expansion
   const [letterCount, setLetterCount] = useState<number | null>(null);
   const [tone, setTone] = useState<string | null>(null);
+  const [extractionMode, setExtractionMode] = useState<"derivatives" | "plurals" | null>(null);
 
   const [localTransliteration, setLocalTransliteration] = useState<string>("");
   
@@ -93,7 +94,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const handleMainClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (loading || expanded || isEditingWord) return;
-    onExpand(id, { letter_count: letterCount, tone });
+    onExpand(id, { letter_count: letterCount, tone, mode: extractionMode });
   };
 
   const handleSelectClick = (e: React.MouseEvent) => {
@@ -104,7 +105,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const handleRegenerateClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRegenerate) {
-      onRegenerate(id, { letter_count: letterCount, tone });
+      onRegenerate(id, { letter_count: letterCount, tone, mode: extractionMode });
     }
   };
 
@@ -169,8 +170,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                   title="تصفية حسب عدد الحروف (Filter by length)"
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
                     letterCount 
-                      ? "bg-amber-500 text-white border-amber-600 scale-110" 
-                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                      ? "bg-accent text-white border-secondary scale-110" 
+                      : "bg-bg-panel text-text-muted border-border-main hover:bg-bg-page hover:text-text-main"
                   }`}
                 >
                   <Hash className="w-4 h-4" />
@@ -183,7 +184,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       initial={{ opacity: 0, scale: 0.95, y: -5 }}
                       animate={{ opacity: 1, scale: 1, y: 22 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                      className="absolute left-1/2 -translate-x-1/2 bg-white border-2 border-neutral-300 rounded-2xl p-2 flex gap-1.5 z-[200] shadow-lg"
+                      className="absolute left-1/2 -translate-x-1/2 bg-bg-panel border-2 border-border-main rounded-2xl p-2 flex gap-1.5 z-[200] shadow-lg"
                     >
                       {letterOptions.map((num) => (
                         <button
@@ -193,10 +194,10 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                             setLetterCount(num);
                             setShowLetterMenu(false);
                           }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors whitespace-nowrap ${
                             letterCount === num
-                              ? "bg-amber-500 text-white"
-                              : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                              ? "bg-accent text-white"
+                              : "text-text-muted hover:bg-bg-page hover:text-text-main"
                           }`}
                         >
                           {num ? `${num} أحرف` : "أي عدد"}
@@ -226,8 +227,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                   title="تصفية حسب النبرة (Filter by tone)"
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
                     tone 
-                      ? "bg-indigo-600 text-white border-indigo-700 scale-110" 
-                      : "bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                      ? "bg-accent text-white border-secondary scale-110" 
+                      : "bg-bg-panel text-text-muted border-border-main hover:bg-bg-page hover:text-text-main"
                   }`}
                 >
                   <Sparkles className="w-4 h-4" />
@@ -240,7 +241,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       initial={{ opacity: 0, scale: 0.95, y: -5 }}
                       animate={{ opacity: 1, scale: 1, y: 22 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                      className="absolute left-1/2 -translate-x-1/2 bg-white border-2 border-neutral-300 rounded-2xl p-2 w-60 flex flex-col gap-1 z-[200] shadow-lg text-right"
+                      className="absolute left-1/2 -translate-x-1/2 bg-bg-panel border-2 border-border-main rounded-2xl p-2 w-60 flex flex-col gap-1 z-[200] shadow-lg text-right"
                     >
                       <button
                         onClick={(e) => {
@@ -249,15 +250,15 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                           setShowToneMenu(false);
                         }}
                         className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors flex items-center justify-between gap-2 ${
-                          tone === null ? "bg-indigo-50 text-indigo-600" : "text-neutral-600 hover:bg-neutral-50"
+                          tone === null ? "bg-accent-bg text-accent" : "text-text-muted hover:bg-bg-page hover:text-text-main"
                         }`}
                         dir="rtl"
                       >
                         <div className="flex items-center gap-2">
                           <span>✨</span>
-                          <span className="font-semibold text-neutral-800">أي طابع / نبرة</span>
+                          <span className="font-semibold text-text-main">أي طابع / نبرة</span>
                         </div>
-                        <span className="text-[10px] text-neutral-400">بدون تصفية</span>
+                        <span className="text-[10px] text-text-muted/80">بدون تصفية</span>
                       </button>
 
                       {TONE_PRESETS.map((t) => (
@@ -269,28 +270,28 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                             setShowToneMenu(false);
                           }}
                           className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium cursor-pointer transition-colors flex flex-col items-end gap-0.5 ${
-                            tone === t.id ? "bg-indigo-50 text-indigo-600" : "text-neutral-600 hover:bg-neutral-50"
+                            tone === t.id ? "bg-accent-bg text-accent" : "text-text-muted hover:bg-bg-page hover:text-text-main"
                           }`}
                           dir="rtl"
                         >
                           <div className="flex items-center gap-1.5 w-full justify-start text-right">
                             <span className="text-sm">{t.emoji}</span>
-                            <span className="font-semibold text-neutral-800">{t.label}</span>
+                            <span className="font-semibold text-text-main">{t.label}</span>
                           </div>
-                          <p className="text-[10px] text-neutral-400 font-normal leading-tight text-right w-full pr-5">{t.description}</p>
+                          <p className="text-[10px] text-text-muted font-normal leading-tight text-right w-full pr-5">{t.description}</p>
                         </button>
                       ))}
 
                       {/* Display Custom Tone if selected and not a preset */}
                       {tone && !currentTonePreset && (
-                        <div className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold flex items-center justify-between" dir="rtl">
+                        <div className="px-3 py-1.5 rounded-xl bg-accent-bg text-accent text-xs font-bold flex items-center justify-between" dir="rtl">
                           <span className="truncate">نبرة حالية: {tone}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setTone(null);
                             }}
-                            className="text-indigo-400 hover:text-indigo-600 font-bold px-1"
+                            className="text-accent/60 hover:text-accent font-bold px-1"
                           >
                             ×
                           </button>
@@ -298,8 +299,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       )}
 
                       {/* Manual Tone Input Section */}
-                      <div className="border-t border-neutral-100 my-1 pt-1.5" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-[10px] font-bold text-neutral-400 block mb-1 text-right px-2.5">نبرة مخصصة (كتابة يدوية):</span>
+                      <div className="border-t border-border-main/50 my-1 pt-1.5" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-[10px] font-bold text-text-muted/80 block mb-1 text-right px-2.5">نبرة مخصصة (كتابة يدوية):</span>
                         <div className="flex gap-1 px-1 w-full items-center justify-between">
                           <input
                             type="text"
@@ -316,7 +317,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                                 }
                               }
                             }}
-                            className="flex-1 min-w-0 px-2 py-1 bg-neutral-50 border border-neutral-300 rounded-lg text-xs outline-none focus:border-indigo-500 font-sans text-right"
+                            className="flex-1 min-w-0 px-2 py-1 bg-bg-page border border-border-main rounded-lg text-xs outline-none focus:border-accent text-text-main font-sans text-right"
                             dir="rtl"
                           />
                           <button
@@ -327,7 +328,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                                 setShowToneMenu(false);
                               }
                             }}
-                            className="shrink-0 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                            className="shrink-0 px-2.5 py-1 bg-accent hover:bg-accent-hover text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
                           >
                             تأكيد
                           </button>
@@ -353,7 +354,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                 className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
                   selected
                     ? "bg-rose-500 text-white border-rose-600 scale-110"
-                    : "bg-white text-rose-500 border-neutral-300 hover:bg-rose-50 hover:border-rose-400"
+                    : "bg-bg-panel text-rose-500 border-border-main hover:bg-rose-50 hover:border-rose-300"
                 }`}
               >
                 <Heart className={`w-4 h-4 ${selected ? "fill-current" : ""}`} />
@@ -371,7 +372,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               <button
                 onClick={handleRegenerateClick}
                 title="إعادة توليد الفروع (Regenerate children)"
-                className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-white text-indigo-600 border border-neutral-300 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -388,9 +389,65 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               <button
                 onClick={handleEditClick}
                 title="تعديل الكلمة (Edit word)"
-                className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-white text-amber-600 border border-neutral-300 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-700 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
               >
                 <Type className="w-4 h-4" />
+              </button>
+            </motion.div>
+
+            {/* Satellite 6: Derivatives (Left Checkbox) */}
+            <motion.div
+              initial={{ scale: 0, x: 0, y: 0 }}
+              animate={{ scale: 1, x: -74, y: 0 }}
+              exit={{ scale: 0, x: 0, y: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.14 }}
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-20"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExtractionMode(extractionMode === "derivatives" ? null : "derivatives");
+                }}
+                title="استخراج المشتقات (Extract Derivatives)"
+                className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
+                  extractionMode === "derivatives"
+                    ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
+                    : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                }`}
+              >
+                {extractionMode === "derivatives" ? (
+                  <Check className="w-4 h-4 stroke-[3px]" />
+                ) : (
+                  <GitFork className="w-4 h-4" />
+                )}
+              </button>
+            </motion.div>
+
+            {/* Satellite 7: Plurals (Right Checkbox) */}
+            <motion.div
+              initial={{ scale: 0, x: 0, y: 0 }}
+              animate={{ scale: 1, x: 74, y: 0 }}
+              exit={{ scale: 0, x: 0, y: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.16 }}
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-20"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExtractionMode(extractionMode === "plurals" ? null : "plurals");
+                }}
+                title="استخراج الجموع (Extract Plurals)"
+                className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
+                  extractionMode === "plurals"
+                    ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
+                    : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                }`}
+              >
+                {extractionMode === "plurals" ? (
+                  <Check className="w-4 h-4 stroke-[3px]" />
+                ) : (
+                  <Layers className="w-4 h-4" />
+                )}
               </button>
             </motion.div>
 
@@ -406,16 +463,16 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
             selected
               ? "bg-rose-50 border-rose-400 scale-105"
               : isRoot
-              ? "bg-indigo-50 border-indigo-500 font-medium"
+              ? "bg-accent-bg border-accent font-medium text-text-main"
               : expanded
-              ? "bg-neutral-50 border-neutral-300 text-neutral-500 cursor-default"
-              : "bg-white border-neutral-300 text-neutral-800 hover:border-neutral-400 cursor-pointer"
+              ? "bg-bg-page/70 border-border-main text-text-muted cursor-default"
+              : "bg-bg-panel border-border-main text-text-main hover:border-accent cursor-pointer"
           }`}
           style={{ minWidth: "96px", minHeight: "96px" }}
         >
           {/* Pulsing visual cues for loading */}
           {loading && (
-            <div className="absolute inset-[-4px] rounded-full border-2 border-dashed border-indigo-500 animate-spin" />
+            <div className="absolute inset-[-4px] rounded-full border-2 border-dashed border-accent animate-spin" />
           )}
 
           {/* Node Word Arabic text (large and bold, or editable input) */}
@@ -440,14 +497,14 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                 }
               }}
               onClick={(e) => e.stopPropagation()}
-              className="w-20 px-1 py-0.5 text-center font-sans font-bold text-sm bg-neutral-100 border border-neutral-400 rounded-md outline-none focus:border-indigo-500 text-neutral-900 z-50 relative"
+              className="w-20 px-1 py-0.5 text-center font-sans font-bold text-sm bg-bg-page border border-border-main rounded-md outline-none focus:border-accent text-text-main z-50 relative"
               autoFocus
               dir="rtl"
             />
           ) : (
             <span 
-              className={`font-sans font-bold text-base md:text-lg text-center leading-tight tracking-wide text-neutral-900 ${
-                selected ? "text-rose-950" : isRoot ? "text-indigo-950" : ""
+              className={`font-sans font-bold text-base md:text-lg text-center leading-tight tracking-wide text-text-main ${
+                selected ? "text-rose-950" : isRoot ? "text-accent" : ""
               }`} 
               dir="rtl"
             >
@@ -459,7 +516,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           {localTransliteration && (
             <span 
               className={`font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 ${
-                selected ? "text-rose-700" : isRoot ? "text-indigo-700" : "text-neutral-500"
+                selected ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
               }`}
             >
               {localTransliteration}
@@ -468,23 +525,26 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
           {/* Metadata badges inside the circle if expanded/selected/root */}
           {isRoot && !localTransliteration && (
-            <span className="text-[9px] font-sans font-semibold text-indigo-500 uppercase tracking-wider mt-1 opacity-80">
+            <span className="text-[9px] font-sans font-semibold text-accent uppercase tracking-wider mt-1 opacity-80">
               البداية
             </span>
           )}
 
           {loading && (
-            <span className="text-[8px] font-semibold text-indigo-500 mt-1 uppercase tracking-widest animate-pulse">
+            <span className="text-[8px] font-semibold text-accent mt-1 uppercase tracking-widest animate-pulse">
               جاري البحث
             </span>
           )}
 
           {/* Small badge showing active filters if they exist and are NOT expanded yet */}
-          {!expanded && !loading && (letterCount || tone) && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-neutral-900 text-white text-[8px] font-sans font-bold">
+          {!expanded && !loading && (letterCount || tone || extractionMode) && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-neutral-900 text-white text-[8px] font-sans font-bold whitespace-nowrap">
               {letterCount && <span>{letterCount}ح</span>}
-              {letterCount && tone && <span className="opacity-50">|</span>}
+              {letterCount && (tone || extractionMode) && <span className="opacity-50">|</span>}
               {tone && <span>{currentTonePreset ? "✨" : tone.length > 5 ? tone.substring(0, 4) + ".." : tone}</span>}
+              {tone && extractionMode && <span className="opacity-50">|</span>}
+              {extractionMode === "derivatives" && <span>مشتقات</span>}
+              {extractionMode === "plurals" && <span>جموع</span>}
             </div>
           )}
         </button>

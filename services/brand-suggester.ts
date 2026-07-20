@@ -20,13 +20,53 @@ export interface BrandSuggestionParams {
   word: string;
   letter_count?: number | null;
   tone?: string | null;
+  mode?: "derivatives" | "plurals" | null;
 }
 
 export async function suggest_brand_names(params: BrandSuggestionParams): Promise<SuggestedBrand[]> {
-  const { word, letter_count, tone } = params;
+  const { word, letter_count, tone, mode } = params;
 
   if (!word || !word.trim()) {
     return [];
+  }
+
+  // If we are in derivatives or plurals extraction mode, use the specific functions
+  if (mode === "derivatives") {
+    try {
+      const derivedWords = await extractDerivatives(word);
+      const suggestions = await Promise.all(
+        derivedWords.map(async (w) => {
+          const translit = await transliterate_word(w);
+          return {
+            word: w,
+            transliteration: translit,
+          };
+        })
+      );
+      return suggestions;
+    } catch (error) {
+      console.error("Error in derivatives path:", error);
+      return [];
+    }
+  }
+
+  if (mode === "plurals") {
+    try {
+      const pluralWords = await extractPlurals(word);
+      const suggestions = await Promise.all(
+        pluralWords.map(async (w) => {
+          const translit = await transliterate_word(w);
+          return {
+            word: w,
+            transliteration: translit,
+          };
+        })
+      );
+      return suggestions;
+    } catch (error) {
+      console.error("Error in plurals path:", error);
+      return [];
+    }
   }
 
   const constraints: string[] = [];
@@ -102,6 +142,99 @@ ${constraintsText}
     return [];
   } catch (error) {
     console.error("Error generating brand name suggestions:", error);
+    return [];
+  }
+}
+
+/**
+ * Extracts morphological derivatives (مشتقات صرفية) derived from the root/seed word.
+ * (e.g., "بحر" -> ["بَحّار", "بَحري", "إبحار", "مَبحر", "بُحيرة"])
+ *
+ * @param word - seed Arabic word (required), e.g. "بحر"
+ * @returns A list of up to 6 valid Arabic derivatives (plain strings).
+ */
+export async function extractDerivatives(word: string): Promise<string[]> {
+  const prompt = `أنت خبير في علم الصرف واللغة العربية.
+الكلمة الأساسية: "${word}"
+
+المطلوب: استخرج المشتقات الصرفية الصحيحة المأخوذة من نفس جذر هذه الكلمة (مثل: اسم الفاعل، اسم المفعول، المصدر، صيغ المبالغة، اسم المكان/الزمان، اسم الآلة، التصغير).
+
+الشروط:
+- أعد الكلمات مجردة وبدون شرح.
+- يمكنك إرجاع ما يصل إلى 6 مشتقات كحد أقصى (Up to 6 words).
+- تأكد من صحة الوزن الصرفي للكلمات الناتجة.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING,
+          },
+          description: 'List of up to 6 morphological derivatives in Arabic.',
+        },
+      },
+    });
+
+    if (response.text) {
+      const names = JSON.parse(response.text);
+      if (Array.isArray(names)) {
+        return names.slice(0, 6).map((n) => String(n));
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error extracting derivatives:', error);
+    return [];
+  }
+}
+
+/**
+ * Extracts valid plural forms (جموع الكلمة) for the seed word.
+ * (e.g., "بحر" -> ["بحور", "بحار", "أبحر"])
+ *
+ * @param word - seed Arabic word (required), e.g. "بحر"
+ * @returns A list of up to 6 valid Arabic plural forms (plain strings).
+ */
+export async function extractPlurals(word: string): Promise<string[]> {
+  const prompt = `أنت خبير في علم النحو والصرف للغة العربية.
+الكلمة الأساسية: "${word}"
+
+المطلوب: استخرج صيغ الجمع الصحيحة والمثبتة في المعاجم لهذه الكلمة (سواء جمع تكسير، جمع مذكر سالم، جمع مؤنث سالم، أو جموع الكثرة والقلة).
+
+الشروط:
+- أعد الكلمات مجردة وبدون شرح.
+- يمكنك إرجاع ما يصل إلى 6 صيغ جمع كحد أقصى (Up to 6 words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING,
+          },
+          description: 'List of up to 6 valid Arabic plural forms.',
+        },
+      },
+    });
+
+    if (response.text) {
+      const names = JSON.parse(response.text);
+      if (Array.isArray(names)) {
+        return names.slice(0, 6).map((n) => String(n));
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error extracting plurals:', error);
     return [];
   }
 }

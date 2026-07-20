@@ -155,7 +155,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   // Primary API trigger to expand/branch from a node
   const handleExpand = useCallback(
-    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null }) => {
+    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => {
       // Find the current node
       let targetNode: Node | undefined;
       setNodes((currentNodes) => {
@@ -186,6 +186,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             word: targetWord,
             letter_count: constraints.letter_count,
             tone: constraints.tone,
+            mode: constraints.mode,
           }),
         });
 
@@ -322,7 +323,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   // Trigger regeneration of a node's children by clearing descendants and running handleExpand again
   const handleRegenerate = useCallback(
-    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null }) => {
+    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => {
       // 1. Get descendants of this node
       const descendants = getDescendants(nodeId, nodes);
 
@@ -496,16 +497,15 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         className="w-full h-full"
       >
         <Background color="#cbd5e1" gap={16} size={1} />
-        <Controls showInteractive={false} className="bg-white rounded-2xl border-2 border-slate-200" />
+        <Controls position="bottom-right" showInteractive={false} className="bg-white rounded-2xl border-2 border-slate-200" />
       </ReactFlow>
 
       {/* Reset Tree Node Utility */}
       <button
         onClick={() => resetTree(rootWord)}
-        className="absolute top-4 right-4 bg-white hover:bg-neutral-50 text-slate-600 hover:text-slate-900 px-3.5 py-2 rounded-2xl border-2 border-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer z-40 transition-colors"
+        className="absolute top-4 right-[134px] bg-white hover:bg-neutral-50 text-slate-600 hover:text-slate-900 px-3.5 py-2 rounded-2xl border-2 border-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer z-40 transition-colors"
       >
         <RotateCcw className="w-3.5 h-3.5" />
-        <span>إعادة بناء الشجرة</span>
       </button>
     </div>
   );

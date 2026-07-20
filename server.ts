@@ -34,7 +34,7 @@ async function startServer() {
   // Arabic brand suggestions API route
   app.post("/api/suggest", async (req, res) => {
     try {
-      const { word, letter_count, tone } = req.body;
+      const { word, letter_count, tone, mode } = req.body;
       
       if (!word) {
         return res.status(400).json({ success: false, error: "Seed word is required" });
@@ -44,6 +44,7 @@ async function startServer() {
         word,
         letter_count: letter_count ? Number(letter_count) : null,
         tone: tone || null,
+        mode: mode || null,
       });
 
       res.json({ success: true, suggestions });

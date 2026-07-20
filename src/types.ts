@@ -9,9 +9,9 @@ export interface BrandNodeData {
   isRoot?: boolean;
   parentId?: string | null;
   selected?: boolean;
-  onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null }) => void;
+  onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
   onSelect: (word: string, nodeId: string) => void;
-  onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null }) => void;
+  onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
   onEditWord?: (nodeId: string, newWord: string) => void;
 }
 
