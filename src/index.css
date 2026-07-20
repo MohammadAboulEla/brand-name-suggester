@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Rubik", sans-serif;
+
+  --color-bg-page: var(--bg-page);
+  --color-bg-panel: var(--bg-panel);
+  --color-border-main: var(--border-color);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-bg: var(--color-accent-bg);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-secondary: var(--color-secondary);
+}
+
+/* Default Root variables (using Warm Amber theme from the image as default) */
+:root {
+  --bg-page: #FAF8F5;
+  --bg-panel: #FFFFFF;
+  --border-color: #EBE5DC;
+  --text-main: #3C2A1A;
+  --text-muted: #8B7A6B;
+  --color-accent: #D97706;
+  --color-accent-bg: #FEF3C7;
+  --color-accent-hover: #F59E0B;
+  --color-secondary: #B45309;
+}
+
+/* Amber Theme (inspired by the gold-beige image) */
+.theme-amber {
+  --bg-page: #FAF8F5;
+  --bg-panel: #FFFFFF;
+  --border-color: #EBE5DC;
+  --text-main: #3C2A1A;
+  --text-muted: #8B7A6B;
+  --color-accent: #D97706;
+  --color-accent-bg: #FEF3C7;
+  --color-accent-hover: #F59E0B;
+  --color-secondary: #B45309;
+}
+
+/* Slate Theme (modern clean blue-slate) */
+.theme-slate {
+  --bg-page: #F8FAFC;
+  --bg-panel: #FFFFFF;
+  --border-color: #E2E8F0;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --color-accent: #4F46E5;
+  --color-accent-bg: #EEF2FF;
+  --color-accent-hover: #4338CA;
+  --color-secondary: #3730A3;
+}
+
+/* Emerald Theme (tranquil mint and natural sage) */
+.theme-emerald {
+  --bg-page: #F4FBF7;
+  --bg-panel: #FFFFFF;
+  --border-color: #E1F2E8;
+  --text-main: #062F1E;
+  --text-muted: #567C6E;
+  --color-accent: #059669;
+  --color-accent-bg: #ECFDF5;
+  --color-accent-hover: #047857;
+  --color-secondary: #065F46;
+}
+
+/* Rose Theme (soft peach and crimson berry) */
+.theme-rose {
+  --bg-page: #FFF5F5;
+  --bg-panel: #FFFFFF;
+  --border-color: #FEE2E2;
+  --text-main: #4C0519;
+  --text-muted: #9E6B77;
+  --color-accent: #E11D48;
+  --color-accent-bg: #FFE4E6;
+  --color-accent-hover: #BE123C;
+  --color-secondary: #9F1239;
+}
+
+/* Elevate active, hovered, or focused React Flow nodes so their menus and satellites are drawn on top of other nodes */
+.react-flow__node:hover,
+.react-flow__node:focus-within,
+.react-flow__node.selected {
+  z-index: 100 !important;
+}
+
+/* Flat node overrides for React Flow background canvas */
+.react-flow__background {
+  background-color: var(--bg-page) !important;
+}
