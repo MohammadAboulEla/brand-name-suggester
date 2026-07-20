@@ -441,7 +441,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
       {/* Guide Help Info Button */}
       <div 
-        className="absolute bottom-4 left-4 z-45 flex flex-col items-start gap-2"
+        className="absolute bottom-4 left-4 z-45 flex flex-col items-start gap-2 font-sans"
         onMouseEnter={() => setShowGuide(true)}
         onMouseLeave={() => setShowGuide(false)}
       >
@@ -452,23 +452,26 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-white/95 backdrop-blur-md border-2 border-slate-300 rounded-2xl p-4 max-w-xs text-xs text-slate-500 space-y-1.5"
+              className="bg-bg-panel/95 backdrop-blur-md border-2 border-border-main rounded-2xl p-3 max-w-[250px] text-[11px] text-text-muted space-y-1.5 shadow-xl"
             >
-              <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                <HelpCircle className="w-4 h-4 text-indigo-500" />
-                <span>إرشادات التصفح (Guide)</span>
+              <div className="flex items-center gap-1.5 font-bold text-text-main pb-1 border-b border-border-main/40">
+                <HelpCircle className="w-3.5 h-3.5 text-accent" />
+                <span className="font-display">إرشادات التصفح</span>
               </div>
-              <p dir="rtl" className="text-right font-medium text-slate-600 leading-relaxed">
-                • حرك الفأرة (Hover) فوق الدائرة لتظهر أقمار التحكم.
+              <p dir="rtl" className="text-right font-medium leading-relaxed">
+                • حرك المؤشر فوق الكلمة لتظهر أقمار التحكم والخيارات.
               </p>
-              <p dir="rtl" className="text-right font-medium text-slate-600 leading-relaxed">
-                • اضغط على أيقونة الحروف أو الأسلوب لضبط الطول أو الطابع قبل التفرع.
+              <p dir="rtl" className="text-right font-medium leading-relaxed">
+                • اضغط على <span className="text-accent font-semibold">عدد الحروف (#)</span> أو <span className="text-accent font-semibold">النبرة (✨)</span> لفلترة النتائج.
               </p>
-              <p dir="rtl" className="text-right font-medium text-slate-600 leading-relaxed">
-                • اضغط على الكلمة في الوسط لتوليد ٦ تفرعات جديدة!
+              <p dir="rtl" className="text-right font-medium leading-relaxed">
+                • اضغط على زر <span className="text-accent font-semibold">المشتقات (تفرع)</span> أو <span className="text-accent font-semibold">الجموع (طبقات)</span> للتحويل لمسار توليد صرفي مخصص دقيق ومضمون.
               </p>
-              <p dir="rtl" className="text-right font-medium text-slate-600 leading-relaxed">
-                • اضغط على علامة الصح لترشيح الكلمة كعلامة مختارة.
+              <p dir="rtl" className="text-right font-medium leading-relaxed">
+                • اضغط على <span className="text-accent font-semibold">الكلمة نفسها</span> لتفريغ الشجرة وتوليد فروع مذهلة!
+              </p>
+              <p dir="rtl" className="text-right font-medium leading-relaxed">
+                • اضغط على <span className="text-accent font-semibold">القلب (♥)</span> لحفظ الاسم في قائمة المرشحات الجانبية.
               </p>
             </motion.div>
           )}
@@ -476,10 +479,10 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
         <button
           onClick={() => setShowGuide(!showGuide)}
-          className="w-10 h-10 rounded-full bg-white hover:bg-slate-50 border-2 border-slate-300 flex items-center justify-center text-indigo-600 cursor-pointer transition-all hover:scale-105"
+          className="w-8 h-8 rounded-full bg-bg-panel hover:bg-bg-page border-2 border-border-main flex items-center justify-center text-accent cursor-pointer transition-all hover:scale-105 shadow-sm"
           title="إرشادات التصفح"
         >
-          <HelpCircle className="w-5 h-5 stroke-[2.5px]" />
+          <HelpCircle className="w-4 h-4 stroke-[2px]" />
         </button>
       </div>
 
@@ -497,15 +500,15 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         className="w-full h-full"
       >
         <Background color="#cbd5e1" gap={16} size={1} />
-        <Controls position="bottom-right" showInteractive={false} className="bg-white rounded-2xl border-2 border-slate-200" />
+        <Controls position="bottom-right" showInteractive={false} className="bg-bg-panel rounded-2xl border-2 border-border-main text-text-muted" />
       </ReactFlow>
 
       {/* Reset Tree Node Utility */}
       <button
         onClick={() => resetTree(rootWord)}
-        className="absolute top-4 right-[134px] bg-white hover:bg-neutral-50 text-slate-600 hover:text-slate-900 px-3.5 py-2 rounded-2xl border-2 border-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer z-40 transition-colors"
+        className="absolute top-4 right-[134px] bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main p-2 rounded-2xl border-2 border-border-main text-xs font-semibold flex items-center justify-center cursor-pointer z-40 transition-colors"
       >
-        <RotateCcw className="w-3.5 h-3.5" />
+        <RotateCcw className="w-4 h-4" />
       </button>
     </div>
   );
