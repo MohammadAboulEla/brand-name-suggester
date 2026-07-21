@@ -183,7 +183,11 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   return (
     <div
       ref={containerRef}
-      className="relative p-4 select-none"
+      className={`relative p-4 select-none ${
+        isHovered || showLetterMenu || showToneMenu
+          ? "before:content-[''] before:absolute before:inset-[-48px] before:rounded-full before:pointer-events-auto z-50"
+          : ""
+      }`}
       onMouseEnter={() => {
         if (!isEditingWord) setIsHovered(true);
       }}
@@ -221,7 +225,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: -54, y: -54 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className={`absolute left-1/2 top-1/2 pointer-events-auto transition-all ${showLetterMenu ? 'z-50' : 'z-10 hover:z-50'}`}
+              className={`absolute left-1/2 top-1/2 pointer-events-auto ${showLetterMenu ? 'z-50' : 'z-10 hover:z-50'}`}
+              style={{ originX: 0, originY: 0 }}
             >
               <div className="relative -translate-x-1/2 -translate-y-1/2">
                 <Tooltip content="تحديد عدد الحروف" position="top">
@@ -279,7 +284,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: 54, y: -54 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.05 }}
-              className={`absolute left-1/2 top-1/2 pointer-events-auto transition-all ${showToneMenu ? 'z-50' : 'z-10 hover:z-50'}`}
+              className={`absolute left-1/2 top-1/2 pointer-events-auto ${showToneMenu ? 'z-50' : 'z-10 hover:z-50'}`}
+              style={{ originX: 0, originY: 0 }}
             >
               <div className="relative -translate-x-1/2 -translate-y-1/2">
                 <Tooltip content="تحديد طابع المعاني المتولده" position="top">
@@ -432,20 +438,23 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: -54, y: 54 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
-              className="absolute left-1/2 top-1/2 pointer-events-auto transition-all z-10 hover:z-50"
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-10 hover:z-50"
+              style={{ originX: 0, originY: 0 }}
             >
-              <Tooltip content="حفظ في المفضلة" position="bottom">
-                <button
-                  onClick={handleSelectClick}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
-                    selected
-                      ? "bg-rose-500 text-white border-rose-600 scale-110"
-                      : "bg-bg-panel text-rose-500 border-border-main hover:bg-rose-50 hover:border-rose-300"
-                  }`}
-                >
-                  <Heart className={`w-4 h-4 ${selected ? "fill-current" : ""}`} />
-                </button>
-              </Tooltip>
+              <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <Tooltip content="حفظ في المفضلة" position="bottom">
+                  <button
+                    onClick={handleSelectClick}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
+                      selected
+                        ? "bg-rose-500 text-white border-rose-600 scale-110"
+                        : "bg-bg-panel text-rose-500 border-border-main hover:bg-rose-50 hover:border-rose-300"
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${selected ? "fill-current" : ""}`} />
+                  </button>
+                </Tooltip>
+              </div>
             </motion.div>
  
             {/* Satellite 4: Regenerate Children (Bottom Right) */}
@@ -454,16 +463,19 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: 54, y: 54 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.12 }}
-              className="absolute left-1/2 top-1/2 pointer-events-auto transition-all z-10 hover:z-50"
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-10 hover:z-50"
+              style={{ originX: 0, originY: 0 }}
             >
-              <Tooltip content="إعادة توليد المعاني" position="bottom">
-                <button
-                  onClick={handleRegenerateClick}
-                  className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-              </Tooltip>
+              <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <Tooltip content="إعادة توليد المعاني" position="bottom">
+                  <button
+                    onClick={handleRegenerateClick}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
+              </div>
             </motion.div>
  
             {/* Satellite 5: Word Edit (Top Center) - Uses T icon for editing the word */}
@@ -472,16 +484,19 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: 0, y: -72 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.08 }}
-              className="absolute left-1/2 top-1/2 pointer-events-auto transition-all z-20 hover:z-50"
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-20 hover:z-50"
+              style={{ originX: 0, originY: 0 }}
             >
-              <Tooltip content="تعديل الكلمة" position="top">
-                <button
-                  onClick={handleEditClick}
-                  className="w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
-                >
-                  <Type className="w-4 h-4" />
-                </button>
-              </Tooltip>
+              <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <Tooltip content="تعديل الكلمة" position="top">
+                  <button
+                    onClick={handleEditClick}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-bg-panel text-accent border border-border-main hover:bg-accent-bg hover:border-accent hover:text-accent-hover transition-all cursor-pointer"
+                  >
+                    <Type className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+              </div>
             </motion.div>
  
             {/* Satellite 6: Derivatives (Left Checkbox) */}
@@ -490,27 +505,30 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: -74, y: 0 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.14 }}
-              className="absolute left-1/2 top-1/2 pointer-events-auto transition-all z-20 hover:z-50"
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-20 hover:z-50"
+              style={{ originX: 0, originY: 0 }}
             >
-              <Tooltip content="توليد المشتقات الصرفية" position="left">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExtractionMode(extractionMode === "derivatives" ? null : "derivatives");
-                  }}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
-                    extractionMode === "derivatives"
-                      ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
-                      : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
-                  }`}
-                >
-                  {extractionMode === "derivatives" ? (
-                    <Check className="w-4 h-4 stroke-[3px]" />
-                  ) : (
-                    <GitFork className="w-4 h-4" />
-                  )}
-                </button>
-              </Tooltip>
+              <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <Tooltip content="توليد المشتقات الصرفية" position="left">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExtractionMode(extractionMode === "derivatives" ? null : "derivatives");
+                    }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
+                      extractionMode === "derivatives"
+                        ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
+                        : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                    }`}
+                  >
+                    {extractionMode === "derivatives" ? (
+                      <Check className="w-4 h-4 stroke-[3px]" />
+                    ) : (
+                      <GitFork className="w-4 h-4" />
+                    )}
+                  </button>
+                </Tooltip>
+              </div>
             </motion.div>
  
             {/* Satellite 7: Plurals (Right Checkbox) */}
@@ -519,27 +537,30 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               animate={{ scale: 1, x: 74, y: 0 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.16 }}
-              className="absolute left-1/2 top-1/2 pointer-events-auto transition-all z-20 hover:z-50"
+              className="absolute left-1/2 top-1/2 pointer-events-auto z-20 hover:z-50"
+              style={{ originX: 0, originY: 0 }}
             >
-              <Tooltip content="توليد جموع الكلمة" position="right">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExtractionMode(extractionMode === "plurals" ? null : "plurals");
-                  }}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all border cursor-pointer ${
-                    extractionMode === "plurals"
-                      ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
-                      : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
-                  }`}
-                >
-                  {extractionMode === "plurals" ? (
-                    <Check className="w-4 h-4 stroke-[3px]" />
-                  ) : (
-                    <Layers className="w-4 h-4" />
-                  )}
-                </button>
-              </Tooltip>
+              <div className="relative -translate-x-1/2 -translate-y-1/2">
+                <Tooltip content="توليد جموع الكلمة" position="right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExtractionMode(extractionMode === "plurals" ? null : "plurals");
+                    }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
+                      extractionMode === "plurals"
+                        ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
+                        : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                    }`}
+                  >
+                    {extractionMode === "plurals" ? (
+                      <Check className="w-4 h-4 stroke-[3px]" />
+                    ) : (
+                      <Layers className="w-4 h-4" />
+                    )}
+                  </button>
+                </Tooltip>
+              </div>
             </motion.div>
 
           </div>
