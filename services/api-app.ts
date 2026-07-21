@@ -1,5 +1,5 @@
 import express from "express";
-import { suggest_brand_names, transliterate_word } from "./brand-suggester";
+import { suggest_brand_names, transliterate_word } from "./brand-suggester.js";
 
 // Express app holding only the JSON API routes, shared between the local
 // long-running server (server.ts) and the Vercel serverless function (api/[...path].ts).
