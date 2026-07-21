@@ -330,9 +330,9 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           // Simulate short latency for a authentic feel
           await new Promise((resolve) => setTimeout(resolve, 350));
 
-          // Shuffle the pre-defined MOCK_TEST_WORDS array and grab 4 items
+          // Shuffle the pre-defined MOCK_TEST_WORDS array and grab 5 items (matching MAX_SUGGESTIONS = 5)
           const shuffled = [...MOCK_TEST_WORDS].sort(() => 0.5 - Math.random());
-          suggestions = shuffled.slice(0, 4);
+          suggestions = shuffled.slice(0, 5);
         } else {
           const response = await fetch("/api/suggest", {
             method: "POST",
@@ -867,14 +867,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip content="إعادة تهيئة الشجرة (Reset Tree)" position="bottom">
-          <button
-            onClick={() => resetTree(rootWord)}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </Tooltip>
+
       </div>
 
       {/* Delete Confirmation Modal */}
