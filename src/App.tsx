@@ -15,6 +15,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFakeMode, setIsFakeMode] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
 
   // Dynamic Theme states
   const [currentTheme, setCurrentTheme] = useState("amber"); // defaulting to "amber" (Warm Amber, inspired by the image)
@@ -71,10 +72,10 @@ export default function App() {
 
   return (
     <div className={`h-screen w-screen bg-bg-page text-text-main flex flex-col font-sans select-none overflow-hidden theme-${currentTheme}`}>
-      
+
       {/* Main Workspace without header */}
       <div className="flex-1 flex flex-col md:flex-row relative overflow-hidden">
-        
+
         <AnimatePresence mode="wait">
           {!rootWord ? (
             /* Onboarding Seed Entry Screen */
@@ -103,9 +104,8 @@ export default function App() {
                   e.preventDefault();
                   handleStartTree(seedInput);
                 }}
-                className={`w-full max-w-md flex gap-2 bg-bg-panel p-2 rounded-2xl border-2 mb-4 transition-colors ${
-                  onboardingError ? "border-rose-500" : "border-border-main"
-                }`}
+                className={`w-full max-w-md flex gap-2 bg-bg-panel p-2 rounded-2xl border-2 mb-4 transition-colors ${onboardingError ? "border-rose-500" : "border-border-main"
+                  }`}
               >
                 <input
                   type="text"
@@ -167,7 +167,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="flex-1 flex relative overflow-hidden h-full"
             >
-              
+
               {/* React Flow viewport canvas */}
               <div className="flex-1 h-full relative">
                 <ReactFlowProvider>
@@ -190,18 +190,12 @@ export default function App() {
                 {/* Floating Active Seed Info Badge & Back Arrow */}
                 <div className="absolute top-4 left-4 flex items-center gap-2 z-40">
                   <div className="bg-bg-panel border-2 border-border-main rounded-xl h-10 px-3 flex items-center gap-2 shadow-sm">
-                    <Tooltip content="جذر جديد (Start new seed)" position="bottom">
                       <button
-                        onClick={() => {
-                          setRootWord(null);
-                          setSelectedWord(null);
-                          setSeedInput("");
-                        }}
+                        onClick={() => setShowBackConfirm(true)}
                         className="p-1 hover:bg-bg-page rounded-lg transition-colors text-text-muted hover:text-text-main cursor-pointer flex items-center justify-center"
                       >
                         <ArrowRight className="w-4 h-4 rotate-180" />
                       </button>
-                    </Tooltip>
                     <div className="w-[1px] h-4 bg-border-main" />
                     <span className="text-xs font-semibold text-text-muted font-sans">Seed:</span>
                     <span className="font-display font-bold text-xs text-accent bg-accent-bg px-2 py-0.5 rounded-lg border border-accent/20" dir="rtl">
@@ -219,9 +213,8 @@ export default function App() {
                         setIsSettingsOpen(!isSettingsOpen);
                         setIsSidebarOpen(false);
                       }}
-                      className={`h-10 w-10 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${
-                        isSettingsOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
-                      }`}
+                      className={`h-10 w-10 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${isSettingsOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
+                        }`}
                     >
                       <Settings className="w-4 h-4" />
                     </button>
@@ -234,9 +227,8 @@ export default function App() {
                         setIsSidebarOpen(!isSidebarOpen);
                         setIsSettingsOpen(false);
                       }}
-                      className={`h-10 px-2.5 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-sm ${
-                        isSidebarOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
-                      }`}
+                      className={`h-10 px-2.5 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-sm ${isSidebarOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
+                        }`}
                     >
                       <Heart className={`w-4 h-4 ${favorites.length > 0 ? "fill-rose-500 text-rose-500" : ""}`} />
                       <div className="w-5 h-5 rounded-md bg-accent text-white flex items-center justify-center text-[10px] font-bold">
@@ -259,7 +251,7 @@ export default function App() {
                     style={{ width: "320px" }}
                   >
                     <div className="p-5 flex flex-col h-full min-w-[320px]">
-                      
+
                       {/* Sidebar Header */}
                       <div className="flex justify-between items-center mb-6">
                         <button
@@ -279,7 +271,7 @@ export default function App() {
                           <Check className="w-3.5 h-3.5 text-accent" />
                           <span>الاسم المختار حالياً (Selected Name)</span>
                         </h3>
-                        
+
                         {selectedWord ? (
                           <div className="bg-accent-bg/40 border-2 border-accent rounded-2xl p-4 text-center relative overflow-hidden">
                             <p className="font-display font-black text-3xl text-text-main mb-3" dir="rtl">
@@ -323,11 +315,10 @@ export default function App() {
                             {favorites.map((favWord) => (
                               <div
                                 key={favWord}
-                                className={`flex items-center justify-between p-2.5 rounded-xl border-2 transition-colors ${
-                                  selectedWord === favWord
+                                className={`flex items-center justify-between p-2.5 rounded-xl border-2 transition-colors ${selectedWord === favWord
                                     ? "bg-accent-bg/30 border-accent"
                                     : "bg-bg-page/50 border-border-main hover:border-accent/40"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center gap-1.5">
                                   <button
@@ -392,7 +383,7 @@ export default function App() {
                     style={{ width: "320px" }}
                   >
                     <div className="p-5 flex flex-col h-full min-w-[320px] overflow-hidden">
-                      
+
                       {/* Sidebar Header */}
                       <div className="flex justify-between items-center mb-6 shrink-0">
                         <button
@@ -413,14 +404,13 @@ export default function App() {
                             <Sliders className="w-3.5 h-3.5 text-accent" />
                             <span>وضع التجربة السريع (Smoke Run)</span>
                           </h3>
-                          
-                          <div 
+
+                          <div
                             onClick={() => setIsFakeMode(!isFakeMode)}
-                            className={`border-2 rounded-2xl p-4 text-right cursor-pointer transition-all flex flex-col gap-2 relative overflow-hidden ${
-                              isFakeMode 
-                                ? "bg-emerald-500/10 border-emerald-500/50 hover:bg-emerald-500/20" 
+                            className={`border-2 rounded-2xl p-4 text-right cursor-pointer transition-all flex flex-col gap-2 relative overflow-hidden ${isFakeMode
+                                ? "bg-emerald-500/10 border-emerald-500/50 hover:bg-emerald-500/20"
                                 : "bg-bg-page/40 border-dashed border-border-main hover:border-accent/40"
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-1.5">
@@ -434,10 +424,10 @@ export default function App() {
                                 )}
                               </div>
                               <span className="font-display font-bold text-sm text-text-main">
-                                إنشاء فوري وهمي
+                                توليد كلمات وهمية
                               </span>
                             </div>
-                            
+
                             <p className="text-[11px] text-text-muted leading-relaxed" dir="rtl">
                               عند التفعيل، سيقوم المولد بإنشاء اشتقاقات عربية فنية وهمية فوراً ومحاكاة الاستجابة دون الاتصال بالخادم. مفيد لتجربة وتصفح الشجرة بسرعة فائقة.
                             </p>
@@ -456,11 +446,10 @@ export default function App() {
                               <button
                                 key={t.id}
                                 onClick={() => setCurrentTheme(t.id)}
-                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
-                                  currentTheme === t.id
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${currentTheme === t.id
                                     ? "bg-accent-bg border-accent text-text-main"
                                     : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                                }`}
+                                  }`}
                               >
                                 <span className={`w-3 h-3 rounded-full shrink-0 ${t.dotClass}`} />
                                 <span className="font-display font-bold text-xs">{t.name.split(" ")[0]}</span>
@@ -486,11 +475,10 @@ export default function App() {
                               <button
                                 key={shape.id}
                                 onClick={() => setEdgeType(shape.id)}
-                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-center leading-tight ${
-                                  edgeType === shape.id
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-center leading-tight ${edgeType === shape.id
                                     ? "bg-accent-bg border-accent text-text-main"
                                     : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                                }`}
+                                  }`}
                               >
                                 <span className="font-display font-bold text-xs">{shape.name}</span>
                                 <span className="text-[8px] font-mono text-text-muted/80">{shape.desc}</span>
@@ -509,22 +497,20 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-1.5 font-sans">
                             <button
                               onClick={() => setIsEdgeDashed(false)}
-                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${
-                                !isEdgeDashed
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${!isEdgeDashed
                                   ? "bg-accent-bg border-accent text-text-main"
                                   : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                              }`}
+                                }`}
                             >
                               <span className="font-display font-bold text-xs">متصل</span>
                               <span className="w-10 h-0.5 bg-current mt-1" />
                             </button>
                             <button
                               onClick={() => setIsEdgeDashed(true)}
-                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${
-                                isEdgeDashed
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${isEdgeDashed
                                   ? "bg-accent-bg border-accent text-text-main"
                                   : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                              }`}
+                                }`}
                             >
                               <span className="font-display font-bold text-xs">متقطع</span>
                               <span className="w-10 border-t border-dashed border-current mt-1.5" />
@@ -550,6 +536,67 @@ export default function App() {
               </AnimatePresence>
 
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Back Confirmation Dialog */}
+        <AnimatePresence>
+          {showBackConfirm && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowBackConfirm(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+
+              {/* Dialog Content */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", duration: 0.4 }}
+                className="relative w-full max-w-md bg-bg-panel border-2 border-border-main rounded-3xl p-6 shadow-2xl text-center z-10"
+                dir="rtl"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-accent-bg border border-accent/20 flex items-center justify-center text-accent mx-auto mb-4">
+                  <Compass className="w-6 h-6 animate-spin-slow" />
+                </div>
+
+                <h3 className="font-display font-bold text-xl text-text-main mb-2">
+                  هل أنت متأكد من العودة؟
+                </h3>
+                <p className="text-sm text-text-muted mb-6 leading-relaxed">
+                  ستفقد شجرة الاستكشاف الحالية والاشتقاقات غير المحفوظة في قائمة المفضلة.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <button
+                    onClick={() => {
+                      setRootWord(null);
+                      setSelectedWord(null);
+                      setSeedInput("");
+                      setShowBackConfirm(false);
+                    }}
+                    className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl text-sm transition-all cursor-pointer shadow-sm shadow-rose-500/10 border border-rose-600/30"
+                  >
+                    نعم، أريد العودة
+                  </button>
+                  <button
+                    onClick={() => setShowBackConfirm(false)}
+                    className="flex-1 py-3 bg-bg-page hover:bg-border-main/20 border-2 border-border-main text-text-main font-semibold rounded-xl text-sm transition-all cursor-pointer"
+                  >
+                    إلغاء والذهاب للشجرة
+                  </button>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-border-main/50 text-[10px] text-text-muted font-sans flex items-center justify-center gap-1">
+                  <span>Are you sure you want to exit? Unsaved changes will be lost.</span>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
