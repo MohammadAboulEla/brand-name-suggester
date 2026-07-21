@@ -585,10 +585,23 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           }`}
           style={{ minWidth: "96px", minHeight: "96px" }}
         >
-          {/* Pulsing visual cues for loading */}
-          {loading && (
-            <div className="absolute inset-[-4px] rounded-full border-2 border-dashed border-accent animate-spin" />
-          )}
+{/* Pulsing visual cues for loading */}
+{loading && (
+  <svg 
+    className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] animate-spin [animation-duration:3s] text-accent pointer-events-none" 
+    viewBox="0 0 112 112"
+  >
+    <circle
+      cx="56"
+      cy="56"
+      r="53"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeDasharray="6 8"
+    />
+  </svg>
+)}
 
           {/* Node Word Arabic text (large and bold, or editable input) */}
           {isEditingWord ? (
