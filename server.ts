@@ -31,6 +31,31 @@ async function startServer() {
     }
   });
 
+  // AI provider connection test route (used by the Settings modal)
+  app.post("/api/ai-provider/test", async (req, res) => {
+    try {
+      const { baseURL, apiKey, envVar } = req.body;
+      if (!baseURL) {
+        return res.status(400).json({ success: false, error: "Base URL is required" });
+      }
+      const resolvedKey = apiKey || (envVar ? process.env[envVar] : undefined);
+      if (!resolvedKey) {
+        return res.json({ success: false, error: envVar ? `No API key found in env var "${envVar}"` : "API key is required" });
+      }
+
+      const response = await fetch(`${baseURL.replace(/\/$/, "")}/models`, {
+        headers: { Authorization: `Bearer ${resolvedKey}` },
+      });
+
+      if (!response.ok) {
+        return res.json({ success: false, error: `Provider responded with ${response.status}` });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.json({ success: false, error: error.message || "Connection failed" });
+    }
+  });
+
   // Arabic brand suggestions API route
   app.post("/api/suggest", async (req, res) => {
     try {

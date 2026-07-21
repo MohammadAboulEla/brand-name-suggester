@@ -840,7 +840,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       </ReactFlow>
 
       {/* Project State Utilities: Load, Save, Reset */}
-      <div className="absolute top-4 right-[144px] z-40 flex items-center gap-2">
+      <div className="absolute top-4 right-[192px] z-40 flex items-center gap-2">
         <input
           type="file"
           ref={fileInputRef}

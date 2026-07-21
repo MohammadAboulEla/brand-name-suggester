@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ArrowRight, Copy, Check, Trash2, HelpCircle, FileText, Compass, Leaf, Palette, Settings, Heart, Sliders } from "lucide-react";
+import { Sparkles, ArrowRight, Copy, Check, Trash2, HelpCircle, FileText, Compass, Leaf, Palette, Settings, Heart, Sliders, Bot } from "lucide-react";
 import { ExplorationTree } from "./components/ExplorationTree";
 import { Tooltip } from "./components/Tooltip";
+import { AISettingsModal } from "./components/AISettingsModal";
 
 export default function App() {
   const [seedInput, setSeedInput] = useState("");
@@ -13,6 +14,7 @@ export default function App() {
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isFakeMode, setIsFakeMode] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
@@ -206,6 +208,16 @@ export default function App() {
 
                 {/* Floating Sidebar Toggle and Settings Buttons (on the right) */}
                 <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                  {/* AI Provider Settings Button */}
+                  <Tooltip content="مزود الذكاء الاصطناعي (AI Provider)" position="bottom">
+                    <button
+                      onClick={() => setIsAISettingsOpen(true)}
+                      className="h-10 w-10 bg-bg-panel hover:bg-bg-page border-2 border-border-main rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm text-text-muted hover:text-text-main"
+                    >
+                      <Bot className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+
                   {/* Settings Button */}
                   <Tooltip content="الإعدادات والخيارات (Settings)" position="bottom">
                     <button
@@ -601,6 +613,8 @@ export default function App() {
         </AnimatePresence>
 
       </div>
+
+      <AISettingsModal isOpen={isAISettingsOpen} onClose={() => setIsAISettingsOpen(false)} />
     </div>
   );
 }
