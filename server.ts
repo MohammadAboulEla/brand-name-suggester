@@ -15,7 +15,7 @@ async function startServer() {
   // Arabic word transliteration route
   app.post("/api/transliterate", async (req, res) => {
     try {
-      const { word } = req.body;
+      const { word, provider } = req.body;
       if (!word) {
         return res.status(400).json({ success: false, error: "Word is required" });
       }
@@ -23,7 +23,7 @@ async function startServer() {
       if (!isArabic) {
         return res.status(400).json({ success: false, error: "Word must start with an Arabic character" });
       }
-      const transliteration = await transliterate_word(word);
+      const transliteration = await transliterate_word(word, provider);
       res.json({ success: true, transliteration });
     } catch (error: any) {
       console.error("API transliterate error:", error);
@@ -59,8 +59,8 @@ async function startServer() {
   // Arabic brand suggestions API route
   app.post("/api/suggest", async (req, res) => {
     try {
-      const { word, letter_count, tone, mode } = req.body;
-      
+      const { word, letter_count, tone, mode, provider } = req.body;
+
       if (!word) {
         return res.status(400).json({ success: false, error: "Seed word is required" });
       }
@@ -74,6 +74,7 @@ async function startServer() {
         letter_count: letter_count ? Number(letter_count) : null,
         tone: tone || null,
         mode: mode || null,
+        provider: provider || null,
       });
 
       res.json({ success: true, suggestions });

@@ -15,6 +15,7 @@ import { BrandNodeData } from "../types";
 import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
+import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
 const nodeTypes = {
   brandNode: BrandNode,
@@ -342,6 +343,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               letter_count: constraints.letter_count,
               tone: constraints.tone,
               mode: constraints.mode,
+              provider: toProviderRequest(loadAIProviderSettings()),
             }),
           });
 

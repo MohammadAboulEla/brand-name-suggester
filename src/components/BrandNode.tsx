@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, Check } from "lucide-react";
 import { BrandNodeData, TONE_PRESETS, TonePreset } from "../types";
 import { Tooltip } from "./Tooltip";
+import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
 export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const nodeData = data as unknown as BrandNodeData;
@@ -121,7 +122,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
         const res = await fetch("/api/transliterate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ word }),
+          body: JSON.stringify({ word, provider: toProviderRequest(loadAIProviderSettings()) }),
         });
         const json = await res.json();
         if (json.success && isMounted) {

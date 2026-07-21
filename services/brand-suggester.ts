@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from "openai";
 
 const DEFAULT_TEXT_MODEL = "gemini-3.1-flash-lite";
 const MAX_SUGGESTIONS = 5;
@@ -17,15 +18,54 @@ export interface SuggestedBrand {
   transliteration: string;
 }
 
+// Provider selection forwarded from the client's AI Settings modal; when absent
+// (or missing a resolvable API key) callers fall back to the default Gemini SDK path.
+export interface ProviderRequest {
+  baseURL?: string;
+  model?: string;
+  apiKey?: string;
+  envVar?: string;
+}
+
 export interface BrandSuggestionParams {
   word: string;
   letter_count?: number | null;
   tone?: string | null;
   mode?: "derivatives" | "plurals" | null;
+  provider?: ProviderRequest | null;
+}
+
+function resolveOpenAIConfig(provider?: ProviderRequest | null): { apiKey: string; baseURL: string; model: string } | null {
+  if (!provider || !provider.baseURL || !provider.model) return null;
+  const apiKey = provider.apiKey || (provider.envVar ? process.env[provider.envVar] : undefined);
+  if (!apiKey) return null;
+  return { apiKey, baseURL: provider.baseURL, model: provider.model };
+}
+
+// Runs the prompt through the user-selected OpenAI-compatible provider; returns
+// null when no provider is configured so the caller can fall back to Gemini.
+async function generateWithProvider(prompt: string, provider: ProviderRequest | null | undefined, temperature?: number): Promise<string | null> {
+  const config = resolveOpenAIConfig(provider);
+  if (!config) return null;
+
+  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+  const completion = await client.chat.completions.create({
+    model: config.model,
+    messages: [{ role: "user", content: prompt }],
+    temperature,
+  });
+  return completion.choices[0]?.message?.content ?? null;
+}
+
+// Some OpenAI-compatible providers wrap JSON responses in markdown code fences; strip those before parsing.
+function extractJson(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return (fenced ? fenced[1] : trimmed).trim();
 }
 
 export async function suggest_brand_names(params: BrandSuggestionParams): Promise<SuggestedBrand[]> {
-  const { word, letter_count, tone, mode } = params;
+  const { word, letter_count, tone, mode, provider } = params;
 
   if (!word || !word.trim()) {
     return [];
@@ -34,10 +74,10 @@ export async function suggest_brand_names(params: BrandSuggestionParams): Promis
   // If we are in derivatives or plurals extraction mode, use the specific functions
   if (mode === "derivatives") {
     try {
-      const derivedWords = await extractDerivatives(word);
+      const derivedWords = await extractDerivatives(word, provider);
       const suggestions = await Promise.all(
         derivedWords.map(async (w) => {
-          const translit = await transliterate_word(w);
+          const translit = await transliterate_word(w, provider);
           return {
             word: w,
             transliteration: translit,
@@ -53,10 +93,10 @@ export async function suggest_brand_names(params: BrandSuggestionParams): Promis
 
   if (mode === "plurals") {
     try {
-      const pluralWords = await extractPlurals(word);
+      const pluralWords = await extractPlurals(word, provider);
       const suggestions = await Promise.all(
         pluralWords.map(async (w) => {
-          const translit = await transliterate_word(w);
+          const translit = await transliterate_word(w, provider);
           return {
             word: w,
             transliteration: translit,
@@ -110,29 +150,33 @@ ${constraintsText}
 ]`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_TEXT_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              word: { type: Type.STRING },
-              transliteration: { type: Type.STRING }
+    const providerText = await generateWithProvider(prompt, provider, 0.8);
+    const text = providerText ?? (await (async () => {
+      const response = await ai.models.generateContent({
+        model: DEFAULT_TEXT_MODEL,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                word: { type: Type.STRING },
+                transliteration: { type: Type.STRING }
+              },
+              required: ["word", "transliteration"]
             },
-            required: ["word", "transliteration"]
+            description: `List of ${MAX_SUGGESTIONS} Arabic brand name suggestions with English transliterations`,
           },
-          description: `List of ${MAX_SUGGESTIONS} Arabic brand name suggestions with English transliterations`,
+          temperature: 0.8,
         },
-        temperature: 0.8,
-      },
-    });
+      });
+      return response.text ?? null;
+    })());
 
-    if (response.text) {
-      const parsed = JSON.parse(response.text.trim());
+    if (text) {
+      const parsed = JSON.parse(extractJson(text));
       if (Array.isArray(parsed)) {
         return parsed.map((item: any) => ({
           word: String(item.word || "").trim(),
@@ -154,7 +198,7 @@ ${constraintsText}
  * @param word - seed Arabic word (required), e.g. "بحر"
  * @returns A list of up to 6 valid Arabic derivatives (plain strings).
  */
-export async function extractDerivatives(word: string): Promise<string[]> {
+export async function extractDerivatives(word: string, provider?: ProviderRequest | null): Promise<string[]> {
   const prompt = `أنت خبير في علم الصرف واللغة العربية.
 الكلمة الأساسية: "${word}"
 
@@ -166,23 +210,27 @@ export async function extractDerivatives(word: string): Promise<string[]> {
 - تأكد من صحة الوزن الصرفي للكلمات الناتجة.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_TEXT_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.STRING,
+    const providerText = await generateWithProvider(prompt, provider);
+    const text = providerText ?? (await (async () => {
+      const response = await ai.models.generateContent({
+        model: DEFAULT_TEXT_MODEL,
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+            description: `List of up to ${MAX_SUGGESTIONS} morphological derivatives in Arabic.`,
           },
-          description: `List of up to ${MAX_SUGGESTIONS} morphological derivatives in Arabic.`,
         },
-      },
-    });
+      });
+      return response.text ?? null;
+    })());
 
-    if (response.text) {
-      const names = JSON.parse(response.text);
+    if (text) {
+      const names = JSON.parse(extractJson(text));
       if (Array.isArray(names)) {
         return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
@@ -201,7 +249,7 @@ export async function extractDerivatives(word: string): Promise<string[]> {
  * @param word - seed Arabic word (required), e.g. "بحر"
  * @returns A list of up to 6 valid Arabic plural forms (plain strings).
  */
-export async function extractPlurals(word: string): Promise<string[]> {
+export async function extractPlurals(word: string, provider?: ProviderRequest | null): Promise<string[]> {
   const prompt = `أنت خبير في علم النحو والصرف للغة العربية.
 الكلمة الأساسية: "${word}"
 
@@ -212,23 +260,27 @@ export async function extractPlurals(word: string): Promise<string[]> {
 - يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} صيغ جمع كحد أقصى (Up to ${MAX_SUGGESTIONS} words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_TEXT_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.STRING,
+    const providerText = await generateWithProvider(prompt, provider);
+    const text = providerText ?? (await (async () => {
+      const response = await ai.models.generateContent({
+        model: DEFAULT_TEXT_MODEL,
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+            },
+            description: `List of up to ${MAX_SUGGESTIONS} valid Arabic plural forms.`,
           },
-          description: `List of up to ${MAX_SUGGESTIONS} valid Arabic plural forms.`,
         },
-      },
-    });
+      });
+      return response.text ?? null;
+    })());
 
-    if (response.text) {
-      const names = JSON.parse(response.text);
+    if (text) {
+      const names = JSON.parse(extractJson(text));
       if (Array.isArray(names)) {
         return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
@@ -240,7 +292,7 @@ export async function extractPlurals(word: string): Promise<string[]> {
   }
 }
 
-export async function transliterate_word(word: string): Promise<string> {
+export async function transliterate_word(word: string, provider?: ProviderRequest | null): Promise<string> {
   const prompt = `You are an expert Arabic linguist.
 Provide the English pronunciation/transliteration of the Arabic word: "${word}".
 Respond ONLY with the transliteration in ALL CAPITAL LETTERS. Do not include any other text, explanation, or punctuation.
@@ -252,14 +304,18 @@ Input: روضة
 Output: RAWDAH`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_TEXT_MODEL,
-      contents: prompt,
-      config: {
-        temperature: 0.2,
-      },
-    });
-    return response.text ? response.text.trim().toUpperCase() : word.toUpperCase();
+    const providerText = await generateWithProvider(prompt, provider, 0.2);
+    const text = providerText ?? (await (async () => {
+      const response = await ai.models.generateContent({
+        model: DEFAULT_TEXT_MODEL,
+        contents: prompt,
+        config: {
+          temperature: 0.2,
+        },
+      });
+      return response.text ?? null;
+    })());
+    return text ? text.trim().toUpperCase() : word.toUpperCase();
   } catch (e) {
     console.error("Transliteration failed:", e);
     return word.toUpperCase();
