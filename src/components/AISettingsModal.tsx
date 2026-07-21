@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: AIProviderSettings = {
   label: PROVIDER_PRESETS[0].label,
   baseURL: PROVIDER_PRESETS[0].baseURL,
   model: PROVIDER_PRESETS[0].model,
-  useEnvKey: true,
+  useEnvKey: false,
   envVar: PROVIDER_PRESETS[0].envVar,
   apiKey: "",
 };
@@ -195,6 +195,9 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                 onChange={(e) => setSettings((prev) => ({ ...prev, envVar: e.target.value }))}
                 className="w-full px-3 py-1.5 bg-bg-page border-2 border-border-main rounded-xl text-sm text-text-main font-mono outline-none focus:border-accent transition-colors"
               />
+              <p className="text-[11px] text-text-muted mt-1">
+                Reads from the server's environment, not yours. Only works when you're self-hosting/running this app locally (or you've set this variable on your own deployment) — on a shared/public site, use "API key" below instead.
+              </p>
             </div>
           ) : (
             <div>
