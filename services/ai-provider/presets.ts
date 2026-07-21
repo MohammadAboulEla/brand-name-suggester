@@ -3,8 +3,8 @@ import type { ProviderPreset } from './types';
 export const PROVIDER_PRESETS: ProviderPreset[] = [
   { id: 'openai', label: 'OpenAI', baseURL: 'https://api.openai.com/v1', model: 'gpt-5.5-instant', envVar: 'OPENAI_API_KEY' },
   { id: 'anthropic', label: 'Anthropic (Claude)', baseURL: 'https://api.anthropic.com/v1', model: 'claude-sonnet-5', envVar: 'ANTHROPIC_API_KEY' },
-  { id: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash', envVar: 'GEMINI_API_KEY' },
-  { id: 'mistral', label: 'Mistral', baseURL: 'https://api.mistral.ai/v1', model: 'mistral-small-latest', envVar: 'MISTRAL_API_KEY' },
+  { id: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-flash-lite-latest', envVar: 'GEMINI_API_KEY' },
+  { id: 'mistral', label: 'Mistral', baseURL: 'https://api.mistral.ai/v1', model: 'mistral-large-latest', envVar: 'MISTRAL_API_KEY' },
   { id: 'groq', label: 'Groq', baseURL: 'https://api.groq.com/openai/v1', model: 'llama-4-70b-versatile', envVar: 'GROQ_API_KEY' },
   { id: 'deepseek', label: 'DeepSeek', baseURL: 'https://api.deepseek.com/v1', model: 'deepseek-chat', envVar: 'DEEPSEEK_API_KEY' },
   { id: 'xai', label: 'xAI (Grok)', baseURL: 'https://api.x.ai/v1', model: 'grok-4.5', envVar: 'XAI_API_KEY' },
