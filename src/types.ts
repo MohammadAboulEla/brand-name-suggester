@@ -12,7 +12,7 @@ export interface BrandNodeData {
   onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
   onSelect: (word: string, nodeId: string) => void;
   onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
-  onEditWord?: (nodeId: string, newWord: string) => void;
+  onEditWord?: (nodeId: string, newWord: string) => boolean;
 }
 
 export type TonePreset = {
@@ -27,5 +27,5 @@ export const TONE_PRESETS: TonePreset[] = [
   { id: "elegant", label: "أنيق وفاخر (Elegant)", emoji: "✨", description: "طابع راقٍ، فخم وجذاب" },
   { id: "poetic", label: "شاعري وأصيل (Poetic)", emoji: "🌿", description: "كلاسيكي، ذو نغمة عربية عميقة ورائعة" },
   { id: "playful", label: "مرح وودي (Playful)", emoji: "🎈", description: "طابع دافئ، نشيط وشاب" },
-  { id: "corporate", label: "رسمي ومؤسسي (Corporate)", emoji: "🏢", description: "طابع مهني وموثوق ومستقر" },
+  { id: "corporate", label: "رسمي (Corporate)", emoji: "🏢", description: "طابع مهني وموثوق ومستقر" },
 ];

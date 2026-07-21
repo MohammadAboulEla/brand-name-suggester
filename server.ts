@@ -1,14 +1,10 @@
 import express from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { suggest_brand_names, transliterate_word } from "./services/brand-suggester";
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -22,6 +18,10 @@ async function startServer() {
       const { word } = req.body;
       if (!word) {
         return res.status(400).json({ success: false, error: "Word is required" });
+      }
+      const isArabic = /^[\u0600-\u06FF]/.test(word.trim());
+      if (!isArabic) {
+        return res.status(400).json({ success: false, error: "Word must start with an Arabic character" });
       }
       const transliteration = await transliterate_word(word);
       res.json({ success: true, transliteration });
@@ -38,6 +38,10 @@ async function startServer() {
       
       if (!word) {
         return res.status(400).json({ success: false, error: "Seed word is required" });
+      }
+      const isArabic = /^[\u0600-\u06FF]/.test(word.trim());
+      if (!isArabic) {
+        return res.status(400).json({ success: false, error: "Seed word must start with an Arabic character" });
       }
 
       const suggestions = await suggest_brand_names({

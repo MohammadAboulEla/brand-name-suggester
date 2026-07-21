@@ -14,8 +14,17 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const [showToneMenu, setShowToneMenu] = useState(false);
 
   // Local constraints set via satellite circles before expansion
-  const [letterCount, setLetterCount] = useState<number | null>(null);
-  const [tone, setTone] = useState<string | null>(null);
+  const [letterCount, setLetterCount] = useState<number | null>(() => nodeData.letter_count ?? null);
+  const [tone, setTone] = useState<string | null>(() => {
+    const pinnedActive = localStorage.getItem("pinned_brand_tone_active") === "true";
+    if (pinnedActive) {
+      return localStorage.getItem("pinned_brand_tone") ?? null;
+    }
+    return nodeData.tone ?? null;
+  });
+  const [isTonePinned, setIsTonePinned] = useState<boolean>(() => {
+    return localStorage.getItem("pinned_brand_tone_active") === "true";
+  });
   const [extractionMode, setExtractionMode] = useState<"derivatives" | "plurals" | null>(null);
 
   const [localTransliteration, setLocalTransliteration] = useState<string>("");
@@ -32,6 +41,59 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   useEffect(() => {
     setEditWordValue(word);
   }, [word]);
+
+  // Reactive synchronization for pinned tone across all active nodes in the tree
+  useEffect(() => {
+    const handlePinnedChange = () => {
+      const pinnedActive = localStorage.getItem("pinned_brand_tone_active") === "true";
+      if (pinnedActive) {
+        const pinnedTone = localStorage.getItem("pinned_brand_tone");
+        setTone(pinnedTone);
+        setIsTonePinned(true);
+        if (pinnedTone) {
+          const isPreset = TONE_PRESETS.some(t => t.id === pinnedTone);
+          if (!isPreset) {
+            setCustomToneInput(pinnedTone);
+          }
+        }
+      } else {
+        setIsTonePinned(false);
+      }
+    };
+
+    window.addEventListener("brand_tone_pinned_changed", handlePinnedChange);
+    return () => {
+      window.removeEventListener("brand_tone_pinned_changed", handlePinnedChange);
+    };
+  }, []);
+
+  // Set custom tone input field if pinned custom tone exists on mount
+  useEffect(() => {
+    const pinnedActive = localStorage.getItem("pinned_brand_tone_active") === "true";
+    if (pinnedActive) {
+      const pinnedTone = localStorage.getItem("pinned_brand_tone") ?? "";
+      if (pinnedTone) {
+        const isPreset = TONE_PRESETS.some(t => t.id === pinnedTone);
+        if (!isPreset) {
+          setCustomToneInput(pinnedTone);
+        }
+      }
+    }
+  }, []);
+
+  const handleSetTone = (newTone: string | null) => {
+    setTone(newTone);
+    if (isTonePinned) {
+      if (newTone !== null) {
+        localStorage.setItem("pinned_brand_tone_active", "true");
+        localStorage.setItem("pinned_brand_tone", newTone);
+      } else {
+        localStorage.setItem("pinned_brand_tone_active", "true");
+        localStorage.setItem("pinned_brand_tone", "");
+      }
+      window.dispatchEvent(new Event("brand_tone_pinned_changed"));
+    }
+  };
 
   // Fetch or resolve English transliteration of the Arabic word
   useEffect(() => {
@@ -227,13 +289,18 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       setShowToneMenu(!showToneMenu);
                       setShowLetterMenu(false);
                     }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer relative ${
                       tone 
                         ? "bg-accent text-white border-secondary scale-110" 
                         : "bg-bg-panel text-text-muted border-border-main hover:bg-bg-page hover:text-text-main"
                     }`}
                   >
                     <Sparkles className="w-4 h-4" />
+                    {isTonePinned && (
+                      <span className="absolute -top-1 -right-1 bg-amber-500 text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full shadow-sm border border-white">
+                        📌
+                      </span>
+                    )}
                   </button>
                 </Tooltip>
 
@@ -246,11 +313,40 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
                       className="absolute left-1/2 -translate-x-1/2 bg-bg-panel border-2 border-border-main rounded-xl p-1.5 w-48 flex flex-col gap-1 z-[200] shadow-lg text-right"
                     >
+                      {/* Pinned/Lock Toggle Switch / Header */}
+                      <div className="flex items-center justify-between border-b border-border-main/40 pb-1.5 mb-1 px-1 text-[11px] gap-1" onClick={(e) => e.stopPropagation()}>
+                        
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newPinState = !isTonePinned;
+                            setIsTonePinned(newPinState);
+                            if (newPinState) {
+                              localStorage.setItem("pinned_brand_tone_active", "true");
+                              localStorage.setItem("pinned_brand_tone", tone ?? "");
+                            } else {
+                              localStorage.removeItem("pinned_brand_tone_active");
+                              localStorage.removeItem("pinned_brand_tone");
+                            }
+                            window.dispatchEvent(new Event("brand_tone_pinned_changed"));
+                          }}
+                          className={`px-1.5 py-0.5 rounded-md font-semibold transition-all cursor-pointer text-[10px] ${
+                            isTonePinned 
+                              ? "bg-amber-100 text-amber-700 border border-amber-300" 
+                              : "bg-bg-page text-text-muted border border-border-main/60 hover:text-text-main"
+                          }`}
+                        >
+                          {isTonePinned ? "مفعّل 📌" : "تفعيل"}
+                        </button>
+                        <span className="text-text-muted font-bold">تثبيت الطابع (قفل 🔒)</span>
+                      </div>
+
                       {/* 1. Any Tone (Default) */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setTone(null);
+                          handleSetTone(null);
                           setShowToneMenu(false);
                         }}
                         className={`w-full px-2 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-colors flex items-center justify-between gap-1 ${
@@ -274,7 +370,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       >
                         <input
                           type="text"
-                          placeholder="نبرة مخصصة..."
+                          placeholder="طابع مخصص"
                           value={customToneInput}
                           onChange={(e) => setCustomToneInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -282,7 +378,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                               e.stopPropagation();
                               e.preventDefault();
                               if (customToneInput.trim()) {
-                                setTone(customToneInput.trim());
+                                handleSetTone(customToneInput.trim());
                                 setShowToneMenu(false);
                               }
                             }
@@ -293,7 +389,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (customToneInput.trim()) {
-                              setTone(customToneInput.trim());
+                              handleSetTone(customToneInput.trim());
                               setShowToneMenu(false);
                             }
                           }}
@@ -312,7 +408,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                           key={t.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setTone(t.id);
+                            handleSetTone(t.id);
                             setShowToneMenu(false);
                           }}
                           className={`w-full px-2 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-colors flex items-center justify-start gap-1.5 ${
@@ -455,13 +551,15 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
         <button
           onClick={handleMainClick}
           className={`w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all relative border-2 ${
+            expanded || loading || isEditingWord ? "cursor-default" : "cursor-pointer hover:border-accent"
+          } ${
             selected
               ? "bg-rose-50 border-rose-400 scale-105"
               : isRoot
               ? "bg-accent-bg border-accent font-medium text-text-main"
               : expanded
-              ? "bg-bg-page/70 border-border-main text-text-muted cursor-default"
-              : "bg-bg-panel border-border-main text-text-main hover:border-accent cursor-pointer"
+              ? "bg-bg-page/70 border-border-main text-text-muted"
+              : "bg-bg-panel border-border-main text-text-main"
           }`}
           style={{ minWidth: "96px", minHeight: "96px" }}
         >
@@ -477,18 +575,28 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               value={editWordValue}
               onChange={(e) => setEditWordValue(e.target.value)}
               onBlur={() => {
-                setIsEditingWord(false);
                 if (editWordValue.trim() && editWordValue.trim() !== word) {
-                  onEditWord?.(id, editWordValue.trim());
+                  const success = onEditWord?.(id, editWordValue.trim());
+                  if (success === false) {
+                    setEditWordValue(word);
+                  }
                 }
+                setIsEditingWord(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.stopPropagation();
-                  setIsEditingWord(false);
                   if (editWordValue.trim() && editWordValue.trim() !== word) {
-                    onEditWord?.(id, editWordValue.trim());
+                    const success = onEditWord?.(id, editWordValue.trim());
+                    if (success === false) {
+                      setEditWordValue(word);
+                    }
                   }
+                  setIsEditingWord(false);
+                } else if (e.key === "Escape") {
+                  e.stopPropagation();
+                  setEditWordValue(word);
+                  setIsEditingWord(false);
                 }
               }}
               onClick={(e) => e.stopPropagation()}

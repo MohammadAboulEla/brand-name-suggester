@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const DEFAULT_TEXT_MODEL = "gemini-3.1-flash-lite";
+const MAX_SUGGESTIONS = 5;
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -88,7 +89,7 @@ export async function suggest_brand_names(params: BrandSuggestionParams): Promis
   const prompt = `أنت خبير في اللغة العربية وتسمية العلامات التجارية (Branding).
 الكلمة الأساسية: "${word}"
 
-المطلوب: اقترح 6 كلمات عربية بديلة ومبتكرة تصلح كاسم براند.
+المطلوب: اقترح ${MAX_SUGGESTIONS} كلمات عربية بديلة ومبتكرة تصلح كاسم براند.
 
 تنبيه هام جداً للتنوع:
 لا تكتفِ بتوليد المشتقات الصرفية المباشرة للكلمة فقط (مثل: بحر -> بحري، بحارة).
@@ -102,7 +103,7 @@ export async function suggest_brand_names(params: BrandSuggestionParams): Promis
 الشروط الإضافية:
 ${constraintsText}
 
-المخرجات يجب أن تكون عبارة عن JSON Array مكون من 6 كائنات، يحتوي كل كائن على الحقول "word" و "transliteration" كما في المثال التالي:
+المخرجات يجب أن تكون عبارة عن JSON Array مكون من ${MAX_SUGGESTIONS} كائنات، يحتوي كل كائن على الحقول "word" و "transliteration" كما في المثال التالي:
 [
   {"word": "محيط", "transliteration": "MUHEET"},
   {"word": "أفق", "transliteration": "OFUQ"}
@@ -124,7 +125,7 @@ ${constraintsText}
             },
             required: ["word", "transliteration"]
           },
-          description: "List of 6 Arabic brand name suggestions with English transliterations",
+          description: `List of ${MAX_SUGGESTIONS} Arabic brand name suggestions with English transliterations`,
         },
         temperature: 0.8,
       },
@@ -136,7 +137,7 @@ ${constraintsText}
         return parsed.map((item: any) => ({
           word: String(item.word || "").trim(),
           transliteration: String(item.transliteration || "").trim().toUpperCase()
-        })).filter(item => item.word).slice(0, 6);
+        })).filter(item => item.word).slice(0, MAX_SUGGESTIONS);
       }
     }
     return [];
@@ -161,12 +162,12 @@ export async function extractDerivatives(word: string): Promise<string[]> {
 
 الشروط:
 - أعد الكلمات مجردة وبدون شرح.
-- يمكنك إرجاع ما يصل إلى 6 مشتقات كحد أقصى (Up to 6 words).
+- يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} مشتقات كحد أقصى (Up to ${MAX_SUGGESTIONS} words).
 - تأكد من صحة الوزن الصرفي للكلمات الناتجة.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: DEFAULT_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -175,7 +176,7 @@ export async function extractDerivatives(word: string): Promise<string[]> {
           items: {
             type: Type.STRING,
           },
-          description: 'List of up to 6 morphological derivatives in Arabic.',
+          description: `List of up to ${MAX_SUGGESTIONS} morphological derivatives in Arabic.`,
         },
       },
     });
@@ -183,7 +184,7 @@ export async function extractDerivatives(word: string): Promise<string[]> {
     if (response.text) {
       const names = JSON.parse(response.text);
       if (Array.isArray(names)) {
-        return names.slice(0, 6).map((n) => String(n));
+        return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
     }
     return [];
@@ -208,11 +209,11 @@ export async function extractPlurals(word: string): Promise<string[]> {
 
 الشروط:
 - أعد الكلمات مجردة وبدون شرح.
-- يمكنك إرجاع ما يصل إلى 6 صيغ جمع كحد أقصى (Up to 6 words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.`;
+- يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} صيغ جمع كحد أقصى (Up to ${MAX_SUGGESTIONS} words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: DEFAULT_TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -221,7 +222,7 @@ export async function extractPlurals(word: string): Promise<string[]> {
           items: {
             type: Type.STRING,
           },
-          description: 'List of up to 6 valid Arabic plural forms.',
+          description: `List of up to ${MAX_SUGGESTIONS} valid Arabic plural forms.`,
         },
       },
     });
@@ -229,7 +230,7 @@ export async function extractPlurals(word: string): Promise<string[]> {
     if (response.text) {
       const names = JSON.parse(response.text);
       if (Array.isArray(names)) {
-        return names.slice(0, 6).map((n) => String(n));
+        return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
     }
     return [];

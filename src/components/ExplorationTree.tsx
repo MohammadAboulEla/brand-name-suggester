@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useRef } from "react";
+import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -12,12 +12,34 @@ import {
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { BrandNodeData } from "../types";
-import { Sparkles, HelpCircle, RotateCcw } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload } from "lucide-react";
+import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 
 const nodeTypes = {
   brandNode: BrandNode,
 };
+
+const MOCK_TEST_WORDS = [
+  { word: "تجربة", transliteration: "TAJRIBA" },
+  { word: "اختبار", transliteration: "IKHTIBAR" },
+  { word: "وهمي", transliteration: "WAHMY" },
+  { word: "نموذج", transliteration: "NAMUDHAJ" },
+  { word: "علامة", transliteration: "ALAMAH" },
+  { word: "فكرة", transliteration: "FIKRAH" },
+  { word: "مشروع", transliteration: "MASHROU" },
+  { word: "تطبيق", transliteration: "TATBEEQ" },
+  { word: "براند", transliteration: "BRAND" },
+  { word: "مسار", transliteration: "MASAR" },
+  { word: "إبداع", transliteration: "IBDA" },
+  { word: "أفق", transliteration: "OFUQ" },
+  { word: "ريادة", transliteration: "RIYADAH" },
+  { word: "وميض", transliteration: "WAMEEDH" },
+  { word: "أثير", transliteration: "ATHEER" },
+  { word: "جوهر", transliteration: "JAWHAR" },
+  { word: "ألفا", transliteration: "ALFA" },
+  { word: "بيتا", transliteration: "BETA" }
+];
 
 // Radial spacing distance for new children branches
 const BRANCH_DISTANCE = 250;
@@ -77,12 +99,22 @@ interface ExplorationTreeProps {
   rootWord: string;
   onSelectWord: (word: string) => void;
   selectedWord: string | null;
+  favorites: string[];
+  onLoadProject?: (rootWord: string, favorites: string[], selectedWord: string | null) => void;
+  edgeType?: string;
+  isEdgeDashed?: boolean;
+  isFakeMode?: boolean;
 }
 
 export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   rootWord,
   onSelectWord,
   selectedWord,
+  favorites,
+  onLoadProject,
+  edgeType = "default",
+  isEdgeDashed = true,
+  isFakeMode = false,
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -90,6 +122,119 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   const [showGuide, setShowGuide] = useState(false);
 
   const regenerateRef = useRef<any>(null);
+  const handleExpandRef = useRef<any>(null);
+  const isFakeModeRef = useRef(isFakeMode);
+
+  // Keep isFakeModeRef up to date
+  useEffect(() => {
+    isFakeModeRef.current = isFakeMode;
+  }, [isFakeMode]);
+
+  // Delete Node States
+  const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
+  const hoveredNodeRef = useRef<Node | null>(null);
+  const [nodeToDelete, setNodeToDelete] = useState<Node | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [ignoreConfirm, setIgnoreConfirm] = useState(() => {
+    return sessionStorage.getItem("ignore_delete_confirm") === "true";
+  });
+
+  // Keep hoveredNodeRef up to date for keydown event handler
+  useEffect(() => {
+    hoveredNodeRef.current = hoveredNode;
+  }, [hoveredNode]);
+
+  // Handle node deletion
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    const nodeToDeleteObj = nodes.find(n => n.id === nodeId);
+    if (!nodeToDeleteObj) return;
+
+    // Prevent deleting the root node
+    if (nodeToDeleteObj.data.isRoot) {
+      setErrorMessage("لا يمكن حذف العقدة الرئيسية للشجرة!"); // Arabic: "Cannot delete the root node of the tree!"
+      return;
+    }
+
+    const descendants = getDescendants(nodeId, nodes);
+    const targetsToDelete = [nodeId, ...descendants];
+
+    setNodes((currentNodes) => {
+      const parentId = nodeToDeleteObj.data.parentId;
+      const remainingNodes = currentNodes.filter((n) => !targetsToDelete.includes(n.id));
+
+      // If the parent of deleted node now has no other children, mark it as collapsed (expanded = false)
+      if (parentId) {
+        const hasOtherChildren = remainingNodes.some((n) => n.data.parentId === parentId);
+        if (!hasOtherChildren) {
+          return remainingNodes.map((n) =>
+            n.id === parentId ? { ...n, data: { ...n.data, expanded: false } } : n
+          );
+        }
+      }
+      return remainingNodes;
+    });
+
+    setEdges((currentEdges) =>
+      currentEdges.filter(
+        (edge) =>
+          !targetsToDelete.includes(edge.source) &&
+          !targetsToDelete.includes(edge.target)
+      )
+    );
+
+    // Deselect if active
+    const deletedNodesList = nodes.filter((n) => targetsToDelete.includes(n.id));
+    const wasSelectedDeleted = deletedNodesList.some((n) => n.data.selected);
+    if (wasSelectedDeleted) {
+      onSelectWord("");
+    }
+  }, [nodes, setNodes, setEdges, onSelectWord]);
+
+  // Trigger delete flow: immediately delete if ignored, else show modal
+  const triggerDeleteFlow = useCallback((nodeId: string) => {
+    const nodeObj = nodes.find(n => n.id === nodeId);
+    if (!nodeObj) return;
+
+    if (nodeObj.data.isRoot) {
+      setErrorMessage("لا يمكن حذف العقدة الرئيسية للشجرة!");
+      return;
+    }
+
+    const isIgnored = sessionStorage.getItem("ignore_delete_confirm") === "true";
+    if (isIgnored) {
+      handleDeleteNode(nodeId);
+    } else {
+      setNodeToDelete(nodeObj);
+      setShowDeleteConfirm(true);
+    }
+  }, [nodes, handleDeleteNode]);
+
+  // Window-level listener for Backspace and Delete keys on non-input elements
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (hoveredNodeRef.current) {
+          e.preventDefault();
+          triggerDeleteFlow(hoveredNodeRef.current.id);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [triggerDeleteFlow]);
 
   // Refs to track drag state for moving children with parent
   const dragStartPos = useRef<{ x: number, y: number } | null>(null);
@@ -179,21 +324,34 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
       try {
         setErrorMessage(null);
-        const response = await fetch("/api/suggest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            word: targetWord,
-            letter_count: constraints.letter_count,
-            tone: constraints.tone,
-            mode: constraints.mode,
-          }),
-        });
+        let suggestions: { word: string; transliteration: string }[] = [];
 
-        const data = await response.json();
+        if (isFakeModeRef.current) {
+          // Simulate short latency for a authentic feel
+          await new Promise((resolve) => setTimeout(resolve, 350));
 
-        if (data.success && Array.isArray(data.suggestions) && data.suggestions.length > 0) {
-          const suggestions: { word: string; transliteration: string }[] = data.suggestions;
+          // Shuffle the pre-defined MOCK_TEST_WORDS array and grab 4 items
+          const shuffled = [...MOCK_TEST_WORDS].sort(() => 0.5 - Math.random());
+          suggestions = shuffled.slice(0, 4);
+        } else {
+          const response = await fetch("/api/suggest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              word: targetWord,
+              letter_count: constraints.letter_count,
+              tone: constraints.tone,
+              mode: constraints.mode,
+            }),
+          });
+
+          const data = await response.json();
+          if (data.success && Array.isArray(data.suggestions)) {
+            suggestions = data.suggestions;
+          }
+        }
+
+        if (suggestions.length > 0) {
 
           // Compute mathematical angles and positions for child nodes
           const parentX = targetNode.position.x;
@@ -263,7 +421,11 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
                 expanded: false,
                 tone: constraints.tone,
                 letter_count: constraints.letter_count,
-                onExpand: (nid, subConstraints) => handleExpand(nid, subConstraints),
+                onExpand: (nid, subConstraints) => {
+                  if (handleExpandRef.current) {
+                    handleExpandRef.current(nid, subConstraints);
+                  }
+                },
                 onSelect: (w, nid) => handleNodeSelect(w, nid),
                 onRegenerate: (nid, subConstraints) => {
                   if (regenerateRef.current) {
@@ -278,10 +440,15 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               id: `edge-${nodeId}-${childId}`,
               source: nodeId,
               target: childId,
-              type: "smoothstep",
-              style: { stroke: "#cbd5e1", strokeWidth: 2 },
-              animated: true,
-            });
+              type: edgeType,
+              style: { 
+                stroke: "#cbd5e1", 
+                strokeWidth: 2,
+                strokeDasharray: isEdgeDashed ? "5, 5" : undefined
+              },
+              animated: isEdgeDashed,
+              pathOptions: edgeType === "smoothstep" ? { borderRadius: 16 } : undefined,
+            } as any);
           });
 
           // Update nodes and edges in graph state
@@ -318,7 +485,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         );
       }
     },
-    [nodes, setNodes, setEdges, handleNodeSelect]
+    [nodes, setNodes, setEdges, handleNodeSelect, edgeType, isEdgeDashed]
   );
 
   // Trigger regeneration of a node's children by clearing descendants and running handleExpand again
@@ -358,8 +525,18 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     regenerateRef.current = handleRegenerate;
   }, [handleRegenerate]);
 
+  React.useEffect(() => {
+    handleExpandRef.current = handleExpand;
+  }, [handleExpand]);
+
   // Handle editing a node's word directly in tree state
   const handleEditWord = useCallback((nodeId: string, newWord: string) => {
+    const isArabic = /^[\u0600-\u06FF]/.test(newWord.trim());
+    if (!isArabic) {
+      setErrorMessage("عذراً، يجب أن تبدأ الكلمة المُعدلة بحرف عربي!");
+      return false;
+    }
+
     setNodes((currentNodes) =>
       currentNodes.map((n) =>
         n.id === nodeId
@@ -374,7 +551,143 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           : n
       )
     );
+    return true;
   }, [setNodes]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveProject = useCallback(() => {
+    try {
+      const projectPayload = {
+        version: "1.0.0",
+        rootWord,
+        selectedWord,
+        favorites,
+        nodes: nodes.map((n) => ({
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: {
+            word: n.data.word,
+            transliteration: n.data.transliteration,
+            parentId: n.data.parentId,
+            isRoot: n.data.isRoot,
+            expanded: n.data.expanded,
+            tone: n.data.tone,
+            letter_count: n.data.letter_count,
+            selected: n.data.selected,
+          },
+        })),
+        edges: edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+        })),
+      };
+
+      const jsonString = JSON.stringify(projectPayload, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${rootWord || "brand-tree"}-project.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      setErrorMessage("عذراً، فشل حفظ المشروع.");
+    }
+  }, [rootWord, selectedWord, favorites, nodes, edges]);
+
+  const handleOpenProjectClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleLoadProjectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+
+        if (!data || typeof data !== "object") {
+          throw new Error("Invalid file content");
+        }
+        if (!data.rootWord || !Array.isArray(data.nodes)) {
+          throw new Error("Missing required project fields");
+        }
+
+        const isArabic = /^[\u0600-\u06FF]/.test(data.rootWord.trim());
+        if (!isArabic) {
+          setErrorMessage("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
+          return;
+        }
+
+        const reconstructedNodes: Node[] = data.nodes.map((n: any) => ({
+          id: n.id,
+          type: n.type || "brandNode",
+          position: n.position,
+          data: {
+            word: n.data.word,
+            transliteration: n.data.transliteration,
+            parentId: n.data.parentId,
+            isRoot: n.data.isRoot,
+            expanded: n.data.expanded,
+            tone: n.data.tone,
+            letter_count: n.data.letter_count,
+            selected: n.data.selected,
+            onExpand: (nid: string, constraints: any) => {
+              if (handleExpandRef.current) {
+                handleExpandRef.current(nid, constraints);
+              }
+            },
+            onSelect: (w: string, nid: string) => handleNodeSelect(w, nid),
+            onRegenerate: (nid: string, subConstraints: any) => {
+              if (regenerateRef.current) {
+                regenerateRef.current(nid, subConstraints);
+              }
+            },
+            onEditWord: (nid: string, newW: string) => handleEditWord(nid, newW),
+          },
+        }));
+
+        const reconstructedEdges: Edge[] = (data.edges || []).map((e: any) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          type: edgeType,
+          style: {
+            stroke: "#cbd5e1",
+            strokeWidth: 2,
+            strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
+          },
+          animated: isEdgeDashed,
+        }));
+
+        setNodes(reconstructedNodes);
+        setEdges(reconstructedEdges);
+        setErrorMessage(null);
+
+        const loadedFavs = Array.isArray(data.favorites) ? data.favorites : [];
+        const loadedSelected = typeof data.selectedWord === "string" ? data.selectedWord : null;
+        onLoadProject?.(data.rootWord, loadedFavs, loadedSelected);
+
+      } catch (err) {
+        console.error("Failed to load project:", err);
+        setErrorMessage("عذراً، فشل تحميل ملف المشروع. تأكد من صحة الملف.");
+      } finally {
+        if (event.target) {
+          event.target.value = "";
+        }
+      }
+    };
+    reader.readAsText(file);
+  }, [edgeType, isEdgeDashed, handleExpand, handleNodeSelect, handleEditWord, setNodes, setEdges, onLoadProject]);
 
   // Initialize/Reset the tree with a new root word
   const resetTree = useCallback((word: string) => {
@@ -388,7 +701,11 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         isRoot: true,
         loading: false,
         expanded: false,
-        onExpand: (nodeId, constraints) => handleExpand(nodeId, constraints),
+        onExpand: (nodeId, constraints) => {
+          if (handleExpandRef.current) {
+            handleExpandRef.current(nodeId, constraints);
+          }
+        },
         onSelect: (w, nodeId) => handleNodeSelect(w, nodeId),
         onRegenerate: (nid, subConstraints) => {
           if (regenerateRef.current) {
@@ -410,6 +727,22 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       resetTree(rootWord);
     }
   }, [rootWord, nodes.length, resetTree]);
+
+  // Synchronize edge types and line styles dynamically for existing edges
+  React.useEffect(() => {
+    setEdges((prevEdges) =>
+      prevEdges.map((edge) => ({
+        ...edge,
+        type: edgeType,
+        style: {
+          ...edge.style,
+          strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
+        },
+        animated: isEdgeDashed,
+        pathOptions: edgeType === "smoothstep" ? { borderRadius: 16 } : undefined,
+      } as any))
+    );
+  }, [edgeType, isEdgeDashed, setEdges]);
 
   // Clean, custom edge styling for React Flow
   const defaultEdgeOptions = useMemo(() => ({
@@ -498,18 +831,136 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
         className="w-full h-full"
+        onNodeMouseEnter={(event, node) => setHoveredNode(node)}
+        onNodeMouseLeave={(event, node) => setHoveredNode((prev) => prev?.id === node.id ? null : prev)}
+        deleteKeyCode={null}
       >
         <Background color="#cbd5e1" gap={16} size={1} />
         <Controls position="bottom-right" showInteractive={false} className="bg-bg-panel rounded-2xl border-2 border-border-main text-text-muted" />
       </ReactFlow>
 
-      {/* Reset Tree Node Utility */}
-      <button
-        onClick={() => resetTree(rootWord)}
-        className="absolute top-4 right-[134px] bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main p-2 rounded-2xl border-2 border-border-main text-xs font-semibold flex items-center justify-center cursor-pointer z-40 transition-colors"
-      >
-        <RotateCcw className="w-4 h-4" />
-      </button>
+      {/* Project State Utilities: Load, Save, Reset */}
+      <div className="absolute top-4 right-[144px] z-40 flex items-center gap-2">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleLoadProjectFile}
+          accept=".json"
+          className="hidden"
+        />
+
+        <Tooltip content="تحميل مشروع من جهازك (Open/Load Project)" position="bottom">
+          <button
+            onClick={handleOpenProjectClick}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <Upload className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="حفظ المشروع الحالي (Save Project)" position="bottom">
+          <button
+            onClick={handleSaveProject}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="إعادة تهيئة الشجرة (Reset Tree)" position="bottom">
+          <button
+            onClick={() => resetTree(rootWord)}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </Tooltip>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && nodeToDelete && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm"
+            />
+            
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="relative bg-bg-panel border-2 border-border-main rounded-3xl p-6 shadow-2xl max-w-md w-full text-right font-sans z-10"
+              dir="rtl"
+            >
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 border-2 border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-text-main mb-1">
+                    تأكيد حذف العقدة (Confirm Node Deletion)
+                  </h3>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    هل أنت متأكد من حذف الكلمة <span className="font-bold text-rose-600">"{nodeToDelete.data.word}"</span>؟ سيؤدي ذلك إلى حذف جميع العقد الفرعية المتفرعة منها بشكل نهائي.
+                  </p>
+                </div>
+              </div>
+
+              {/* Option to ignore confirm modal this session */}
+              <div className="flex items-center gap-2.5 px-3 py-3 bg-bg-page border border-border-main/50 rounded-2xl mb-5 select-none text-right">
+                <input
+                  id="ignore-confirm-checkbox"
+                  type="checkbox"
+                  checked={ignoreConfirm}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIgnoreConfirm(checked);
+                    if (checked) {
+                      sessionStorage.setItem("ignore_delete_confirm", "true");
+                    } else {
+                      sessionStorage.removeItem("ignore_delete_confirm");
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-border-main text-accent focus:ring-accent accent-accent cursor-pointer shrink-0"
+                />
+                <label
+                  htmlFor="ignore-confirm-checkbox"
+                  className="text-[11px] font-bold text-text-muted cursor-pointer leading-normal"
+                >
+                  تخطي هذا التأكيد لهذه الجلسة وحذف العقد مباشرة عند الضغط على زر Delete
+                </label>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-bg-page border-2 border-border-main hover:bg-neutral-50 text-text-muted hover:text-text-main font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  إلغاء (Cancel)
+                </button>
+                <button
+                  onClick={() => {
+                    if (nodeToDelete) {
+                      handleDeleteNode(nodeToDelete.id);
+                      setShowDeleteConfirm(false);
+                    }
+                  }}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs border border-rose-700 transition-colors cursor-pointer"
+                >
+                  تأكيد الحذف (Delete)
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

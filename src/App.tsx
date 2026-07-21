@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ArrowRight, Copy, Check, Trash2, HelpCircle, FileText, Compass, Leaf, Palette } from "lucide-react";
+import { Sparkles, ArrowRight, Copy, Check, Trash2, HelpCircle, FileText, Compass, Leaf, Palette, Settings, Heart, Sliders } from "lucide-react";
 import { ExplorationTree } from "./components/ExplorationTree";
+import { Tooltip } from "./components/Tooltip";
 
 export default function App() {
   const [seedInput, setSeedInput] = useState("");
@@ -11,10 +12,15 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isFakeMode, setIsFakeMode] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
 
   // Dynamic Theme states
   const [currentTheme, setCurrentTheme] = useState("amber"); // defaulting to "amber" (Warm Amber, inspired by the image)
   const [isThemePickerExpanded, setIsThemePickerExpanded] = useState(false);
+  const [edgeType, setEdgeType] = useState<string>("default"); // "smoothstep", "default", "straight", "step"
+  const [isEdgeDashed, setIsEdgeDashed] = useState<boolean>(true);
 
   const themes = [
     { id: "amber", name: "دافئ عسلي (Amber)", dotClass: "bg-[#D97706]" },
@@ -31,6 +37,12 @@ export default function App() {
 
   const handleStartTree = (word: string) => {
     if (!word.trim()) return;
+    const isArabic = /^[\u0600-\u06FF]/.test(word.trim());
+    if (!isArabic) {
+      setOnboardingError("عذراً، يجب أن تبدأ الكلمة بحرف عربي.");
+      return;
+    }
+    setOnboardingError(null);
     setRootWord(word.trim());
     setSelectedWord(null);
     setIsSidebarOpen(false); // keep focused on tree
@@ -74,48 +86,6 @@ export default function App() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col items-center justify-center p-6 max-w-xl mx-auto text-center self-center"
             >
-              {/* Expandable Theme Switcher inside Onboarding */}
-              <div className="mb-6 bg-bg-panel border-2 border-border-main rounded-2xl p-1 flex items-center gap-1 transition-all">
-                <button
-                  type="button"
-                  onClick={() => setIsThemePickerExpanded(!isThemePickerExpanded)}
-                  title="تغيير المظهر (Change theme)"
-                  className="p-2 hover:bg-bg-page rounded-xl text-text-muted hover:text-accent cursor-pointer flex items-center gap-1.5 transition-colors"
-                >
-                  <Palette className="w-4 h-4 text-accent" />
-                  <span className="text-[11px] font-bold font-sans">تغيير المظهر (Theming)</span>
-                </button>
-
-                <AnimatePresence>
-                  {isThemePickerExpanded && (
-                    <motion.div
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="flex items-center gap-1.5 overflow-hidden pr-2 pl-1 whitespace-nowrap"
-                    >
-                      {themes.map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setCurrentTheme(t.id)}
-                          title={t.name}
-                          className={`px-2 py-1 rounded-lg text-xs font-bold font-sans border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                            currentTheme === t.id
-                              ? "bg-accent-bg border-accent text-text-main"
-                              : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                          }`}
-                        >
-                          <span className={`w-2.5 h-2.5 rounded-full ${t.dotClass}`} />
-                          <span>{t.id.toUpperCase()}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               <div className="w-16 h-16 rounded-3xl bg-accent-bg border-2 border-accent flex items-center justify-center text-accent mb-6">
                 <Compass className="w-8 h-8 text-accent animate-spin-slow" />
               </div>
@@ -133,13 +103,18 @@ export default function App() {
                   e.preventDefault();
                   handleStartTree(seedInput);
                 }}
-                className="w-full max-w-md flex gap-2 bg-bg-panel p-2 rounded-2xl border-2 border-border-main mb-8"
+                className={`w-full max-w-md flex gap-2 bg-bg-panel p-2 rounded-2xl border-2 mb-4 transition-colors ${
+                  onboardingError ? "border-rose-500" : "border-border-main"
+                }`}
               >
                 <input
                   type="text"
                   placeholder="مثال: روضة، شمس، سحاب..."
                   value={seedInput}
-                  onChange={(e) => setSeedInput(e.target.value)}
+                  onChange={(e) => {
+                    setSeedInput(e.target.value);
+                    if (onboardingError) setOnboardingError(null);
+                  }}
                   className="flex-1 px-4 py-3 text-right font-display font-medium text-text-main placeholder-text-muted bg-transparent border-none outline-none text-base"
                   dir="rtl"
                 />
@@ -153,11 +128,15 @@ export default function App() {
                 </button>
               </form>
 
+              {onboardingError && (
+                <div className="text-rose-500 text-xs font-semibold mb-6 flex items-center gap-1.5 justify-center" dir="rtl">
+                  <span>⚠️</span>
+                  <span>{onboardingError}</span>
+                </div>
+              )}
+
               {/* Quick seed options */}
               <div className="w-full max-w-md">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-widest block mb-4">
-                  أفكار سريعة للبدء (Quick Seeds)
-                </span>
                 <div className="grid grid-cols-2 gap-3">
                   {quickSeeds.map((seed) => (
                     <button
@@ -193,85 +172,78 @@ export default function App() {
               <div className="flex-1 h-full relative">
                 <ReactFlowProvider>
                   <ExplorationTree
-                    rootWord={rootWord}
+                    rootWord={rootWord || ""}
                     onSelectWord={handleSelectWord}
                     selectedWord={selectedWord}
+                    favorites={favorites}
+                    onLoadProject={(loadedRoot, loadedFavs, loadedSelected) => {
+                      setRootWord(loadedRoot);
+                      setFavorites(loadedFavs);
+                      setSelectedWord(loadedSelected);
+                    }}
+                    edgeType={edgeType}
+                    isEdgeDashed={isEdgeDashed}
+                    isFakeMode={isFakeMode}
                   />
                 </ReactFlowProvider>
 
-                {/* Floating Active Seed Info Badge & Back Arrow & Theme Selector */}
-                <div className="absolute top-4 left-4 flex flex-col md:flex-row gap-2 z-40 items-start md:items-center">
-                  <div className="bg-bg-panel border-2 border-border-main rounded-2xl px-3.5 py-2 flex items-center gap-2.5">
-                    <button
-                      onClick={() => {
-                        setRootWord(null);
-                        setSelectedWord(null);
-                        setSeedInput("");
-                      }}
-                      title="جذر جديد (Start new seed)"
-                      className="p-1.5 hover:bg-bg-page rounded-xl transition-colors text-text-muted hover:text-text-main cursor-pointer flex items-center justify-center"
-                    >
-                      <ArrowRight className="w-4 h-4 rotate-180" />
-                    </button>
+                {/* Floating Active Seed Info Badge & Back Arrow */}
+                <div className="absolute top-4 left-4 flex items-center gap-2 z-40">
+                  <div className="bg-bg-panel border-2 border-border-main rounded-xl h-10 px-3 flex items-center gap-2 shadow-sm">
+                    <Tooltip content="جذر جديد (Start new seed)" position="bottom">
+                      <button
+                        onClick={() => {
+                          setRootWord(null);
+                          setSelectedWord(null);
+                          setSeedInput("");
+                        }}
+                        className="p-1 hover:bg-bg-page rounded-lg transition-colors text-text-muted hover:text-text-main cursor-pointer flex items-center justify-center"
+                      >
+                        <ArrowRight className="w-4 h-4 rotate-180" />
+                      </button>
+                    </Tooltip>
                     <div className="w-[1px] h-4 bg-border-main" />
                     <span className="text-xs font-semibold text-text-muted font-sans">Seed:</span>
-                    <span className="font-display font-bold text-sm text-accent bg-accent-bg px-2.5 py-1 rounded-xl border border-accent/25" dir="rtl">
+                    <span className="font-display font-bold text-xs text-accent bg-accent-bg px-2 py-0.5 rounded-lg border border-accent/20" dir="rtl">
                       {rootWord}
                     </span>
                   </div>
-
-                  {/* Expandable Theme Switcher Widget */}
-                  <div className="bg-bg-panel border-2 border-border-main rounded-2xl p-1 flex items-center gap-1 transition-all">
-                    <button
-                      onClick={() => setIsThemePickerExpanded(!isThemePickerExpanded)}
-                      title="تغيير المظهر (Change theme)"
-                      className="p-2 hover:bg-bg-page rounded-xl text-text-muted hover:text-accent cursor-pointer flex items-center gap-1.5 transition-colors"
-                    >
-                      <Palette className="w-4 h-4 text-accent" />
-                      <span className="text-[11px] font-bold font-sans">المظهر</span>
-                    </button>
-
-                    <AnimatePresence>
-                      {isThemePickerExpanded && (
-                        <motion.div
-                          initial={{ width: 0, opacity: 0 }}
-                          animate={{ width: "auto", opacity: 1 }}
-                          exit={{ width: 0, opacity: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="flex items-center gap-1.5 overflow-hidden pr-2 pl-1 whitespace-nowrap"
-                        >
-                          {themes.map((t) => (
-                            <button
-                              key={t.id}
-                              onClick={() => setCurrentTheme(t.id)}
-                              title={t.name}
-                              className={`px-2 py-1 rounded-lg text-xs font-bold font-sans border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                                currentTheme === t.id
-                                  ? "bg-accent-bg border-accent text-text-main"
-                                  : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
-                              }`}
-                            >
-                              <span className={`w-2.5 h-2.5 rounded-full ${t.dotClass}`} />
-                              <span>{t.id.toUpperCase()}</span>
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
                 </div>
 
-                {/* Floating Sidebar Toggle Button (on the right) */}
-                <div className="absolute top-4 right-4 z-40">
-                  <button
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="bg-bg-panel hover:bg-bg-page text-text-main font-semibold px-4 py-2.5 rounded-2xl border-2 border-border-main text-xs flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
-                  >
-                    <div className="w-5 h-5 rounded-lg bg-accent text-white flex items-center justify-center text-[10px] font-bold">
-                      {favorites.length}
-                    </div>
-                    <span dir="rtl" className="font-display font-bold text-text-main">المرشحات</span>
-                  </button>
+                {/* Floating Sidebar Toggle and Settings Buttons (on the right) */}
+                <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                  {/* Settings Button */}
+                  <Tooltip content="الإعدادات والخيارات (Settings)" position="bottom">
+                    <button
+                      onClick={() => {
+                        setIsSettingsOpen(!isSettingsOpen);
+                        setIsSidebarOpen(false);
+                      }}
+                      className={`h-10 w-10 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${
+                        isSettingsOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+
+                  {/* Favorite Button (icon only, "المرشحات" removed) */}
+                  <Tooltip content="الأسماء المرشحة (Favorites)" position="bottom">
+                    <button
+                      onClick={() => {
+                        setIsSidebarOpen(!isSidebarOpen);
+                        setIsSettingsOpen(false);
+                      }}
+                      className={`h-10 px-2.5 bg-bg-panel hover:bg-bg-page border-2 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-sm ${
+                        isSidebarOpen ? "border-accent text-accent bg-accent-bg/10" : "border-border-main text-text-muted hover:text-text-main"
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${favorites.length > 0 ? "fill-rose-500 text-rose-500" : ""}`} />
+                      <div className="w-5 h-5 rounded-md bg-accent text-white flex items-center justify-center text-[10px] font-bold">
+                        {favorites.length}
+                      </div>
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -403,6 +375,172 @@ export default function App() {
                         </div>
                         <p dir="rtl" className="text-right leading-relaxed">
                           يعتمد المولد على توسيع الجذور الثلاثية وتطبيق أوزان صرفية قياسية لإنتاج كلمات حية ذات بعد بلاغي وجمالي.
+                        </p>
+                      </div>
+
+                    </div>
+                  </motion.div>
+                )}
+
+                {isSettingsOpen && (
+                  <motion.div
+                    initial={{ x: 320, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: 320, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                    className="absolute top-0 right-0 h-full bg-bg-panel border-l-2 border-border-main flex flex-col z-50 shadow-2xl"
+                    style={{ width: "320px" }}
+                  >
+                    <div className="p-5 flex flex-col h-full min-w-[320px] overflow-hidden">
+                      
+                      {/* Sidebar Header */}
+                      <div className="flex justify-between items-center mb-6 shrink-0">
+                        <button
+                          onClick={() => setIsSettingsOpen(false)}
+                          className="px-2.5 py-1.5 hover:bg-bg-page border border-border-main rounded-xl transition-colors text-text-muted hover:text-text-main cursor-pointer text-xs font-bold font-sans"
+                        >
+                          إغلاق ×
+                        </button>
+                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-accent-bg text-accent font-bold tracking-wider font-sans border border-accent/20">
+                          SETTINGS
+                        </span>
+                      </div>
+
+                      <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-1">
+                        {/* Option: Smoke Run / Fake Data Mode */}
+                        <div>
+                          <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <Sliders className="w-3.5 h-3.5 text-accent" />
+                            <span>وضع التجربة السريع (Smoke Run)</span>
+                          </h3>
+                          
+                          <div 
+                            onClick={() => setIsFakeMode(!isFakeMode)}
+                            className={`border-2 rounded-2xl p-4 text-right cursor-pointer transition-all flex flex-col gap-2 relative overflow-hidden ${
+                              isFakeMode 
+                                ? "bg-emerald-500/10 border-emerald-500/50 hover:bg-emerald-500/20" 
+                                : "bg-bg-page/40 border-dashed border-border-main hover:border-accent/40"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1.5">
+                                {isFakeMode ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                                    <span className="text-[11px] font-bold text-emerald-500">نشط (ON)</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[11px] font-bold text-text-muted">مغلق (OFF)</span>
+                                )}
+                              </div>
+                              <span className="font-display font-bold text-sm text-text-main">
+                                إنشاء فوري وهمي
+                              </span>
+                            </div>
+                            
+                            <p className="text-[11px] text-text-muted leading-relaxed" dir="rtl">
+                              عند التفعيل، سيقوم المولد بإنشاء اشتقاقات عربية فنية وهمية فوراً ومحاكاة الاستجابة دون الاتصال بالخادم. مفيد لتجربة وتصفح الشجرة بسرعة فائقة.
+                            </p>
+                          </div>
+                        </div>
+
+                        <hr className="border-border-main/60" />
+
+                        {/* Color Themes Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-text-muted uppercase tracking-widest block mb-2 font-sans">
+                            مظهر الألوان (Color Theme)
+                          </span>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {themes.map((t) => (
+                              <button
+                                key={t.id}
+                                onClick={() => setCurrentTheme(t.id)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center gap-2 ${
+                                  currentTheme === t.id
+                                    ? "bg-accent-bg border-accent text-text-main"
+                                    : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
+                                }`}
+                              >
+                                <span className={`w-3 h-3 rounded-full shrink-0 ${t.dotClass}`} />
+                                <span className="font-display font-bold text-xs">{t.name.split(" ")[0]}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <hr className="border-border-main/60" />
+
+                        {/* Edge Shapes Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-text-muted uppercase tracking-widest block mb-2 font-sans">
+                            شكل الروابط (Edge Shape)
+                          </span>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { id: "smoothstep", name: "منحني ذكي", desc: "Smooth step" },
+                              { id: "default", name: "انسيابي", desc: "Bezier" },
+                              { id: "straight", name: "مستقيم", desc: "Straight" },
+                              { id: "step", name: "قائم الحواف", desc: "Step" },
+                            ].map((shape) => (
+                              <button
+                                key={shape.id}
+                                onClick={() => setEdgeType(shape.id)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-center leading-tight ${
+                                  edgeType === shape.id
+                                    ? "bg-accent-bg border-accent text-text-main"
+                                    : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
+                                }`}
+                              >
+                                <span className="font-display font-bold text-xs">{shape.name}</span>
+                                <span className="text-[8px] font-mono text-text-muted/80">{shape.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <hr className="border-border-main/60" />
+
+                        {/* Edge Style Section */}
+                        <div>
+                          <span className="text-xs font-semibold text-text-muted uppercase tracking-widest block mb-2 font-sans">
+                            نمط الخط (Edge Style)
+                          </span>
+                          <div className="grid grid-cols-2 gap-1.5 font-sans">
+                            <button
+                              onClick={() => setIsEdgeDashed(false)}
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${
+                                !isEdgeDashed
+                                  ? "bg-accent-bg border-accent text-text-main"
+                                  : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
+                              }`}
+                            >
+                              <span className="font-display font-bold text-xs">متصل</span>
+                              <span className="w-10 h-0.5 bg-current mt-1" />
+                            </button>
+                            <button
+                              onClick={() => setIsEdgeDashed(true)}
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${
+                                isEdgeDashed
+                                  ? "bg-accent-bg border-accent text-text-main"
+                                  : "bg-transparent border-transparent hover:bg-bg-page text-text-muted"
+                              }`}
+                            >
+                              <span className="font-display font-bold text-xs">متقطع</span>
+                              <span className="w-10 border-t border-dashed border-current mt-1.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footnote on Settings */}
+                      <div className="mt-4 pt-4 border-t-2 border-border-main text-[10px] text-text-muted space-y-1.5 shrink-0">
+                        <div className="flex items-center gap-1 font-semibold text-text-main">
+                          <HelpCircle className="w-3 h-3" />
+                          <span>تخصيص كامل للنظام</span>
+                        </div>
+                        <p dir="rtl" className="text-right leading-relaxed">
+                          يمكنك اختيار المظهر والروابط المناسبة لبناء وتصور شجرة علامتك التجارية بطريقتك الفريدة.
                         </p>
                       </div>
 
