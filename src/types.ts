@@ -10,6 +10,7 @@ export interface BrandNodeData {
   parentId?: string | null;
   selected?: boolean;
   isFavorite?: boolean;
+  autoEdit?: boolean;
   onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
   onSelect: (word: string, nodeId: string) => void;
   onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;

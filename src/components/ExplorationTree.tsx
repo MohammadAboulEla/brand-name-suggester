@@ -105,6 +105,7 @@ interface ExplorationTreeProps {
   edgeType?: string;
   isEdgeDashed?: boolean;
   isFakeMode?: boolean;
+  autoEditRoot?: boolean;
 }
 
 export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
@@ -116,6 +117,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   edgeType = "default",
   isEdgeDashed = true,
   isFakeMode = false,
+  autoEditRoot = false,
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -703,6 +705,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         isRoot: true,
         loading: false,
         expanded: false,
+        autoEdit: autoEditRoot,
         onExpand: (nodeId, constraints) => {
           if (handleExpandRef.current) {
             handleExpandRef.current(nodeId, constraints);
@@ -721,7 +724,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     setNodes([initialNode]);
     setEdges([]);
     setErrorMessage(null);
-  }, [setNodes, setEdges, handleExpand, handleNodeSelect]);
+  }, [setNodes, setEdges, handleExpand, handleNodeSelect, autoEditRoot]);
 
   // Auto-initialize tree if not already initialized
   React.useEffect(() => {

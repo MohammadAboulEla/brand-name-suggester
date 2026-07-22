@@ -31,17 +31,35 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const [localTransliteration, setLocalTransliteration] = useState<string>("");
   
   // Word inline editing states
-  const [isEditingWord, setIsEditingWord] = useState(false);
-  const [editWordValue, setEditWordValue] = useState(word);
-  
+  const [isEditingWord, setIsEditingWord] = useState(() => !!nodeData.autoEdit);
+  const [editWordValue, setEditWordValue] = useState(() => (nodeData.autoEdit ? "" : word));
+  // While true, the node has no committed word yet and the user must type one before it can close.
+  const [requireWord, setRequireWord] = useState(() => !!nodeData.autoEdit);
+
   // Manual custom tone state
   const [customToneInput, setCustomToneInput] = useState("");
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setEditWordValue(word);
+    // Don't clobber the field while the user is actively editing (also protects the
+    // cleared auto-edit value on mount from StrictMode's double effect invocation).
+    if (!isEditingWord) {
+      setEditWordValue(word);
+    }
   }, [word]);
+
+  useEffect(() => {
+    if (isEditingWord) {
+      // Defer a frame so the input is mounted/measured by React Flow before focusing.
+      const raf = requestAnimationFrame(() => {
+        editInputRef.current?.focus();
+        editInputRef.current?.select();
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [isEditingWord]);
 
   // Reactive synchronization for pinned tone across all active nodes in the tree
   useEffect(() => {
@@ -177,6 +195,35 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
     e.stopPropagation();
     setIsEditingWord(!isEditingWord);
     setIsHovered(false);
+  };
+
+  // Attempt to save the edited word. When empty or invalid, stay in edit mode and
+  // re-focus so the user is forced to provide a valid word before the node closes.
+  const commitEditWord = () => {
+    const trimmed = editWordValue.trim();
+    if (!trimmed) {
+      editInputRef.current?.focus();
+      return;
+    }
+    if (trimmed !== word) {
+      const success = onEditWord?.(id, trimmed);
+      if (success === false) {
+        editInputRef.current?.focus();
+        return;
+      }
+    }
+    setRequireWord(false);
+    setIsEditingWord(false);
+  };
+
+  const cancelEditWord = () => {
+    // A word is mandatory while pending — block cancel until one is entered.
+    if (requireWord) {
+      editInputRef.current?.focus();
+      return;
+    }
+    setEditWordValue(word);
+    setIsEditingWord(false);
   };
 
   const letterOptions = [null, 3, 4, 5, 6];
@@ -606,37 +653,23 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           {/* Node Word Arabic text (large and bold, or editable input) */}
           {isEditingWord ? (
             <input
+              ref={editInputRef}
               type="text"
+              placeholder="اكتب كلمة..."
               value={editWordValue}
               onChange={(e) => setEditWordValue(e.target.value)}
-              onBlur={() => {
-                if (editWordValue.trim() && editWordValue.trim() !== word) {
-                  const success = onEditWord?.(id, editWordValue.trim());
-                  if (success === false) {
-                    setEditWordValue(word);
-                  }
-                }
-                setIsEditingWord(false);
-              }}
+              onBlur={commitEditWord}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.stopPropagation();
-                  if (editWordValue.trim() && editWordValue.trim() !== word) {
-                    const success = onEditWord?.(id, editWordValue.trim());
-                    if (success === false) {
-                      setEditWordValue(word);
-                    }
-                  }
-                  setIsEditingWord(false);
+                  commitEditWord();
                 } else if (e.key === "Escape") {
                   e.stopPropagation();
-                  setEditWordValue(word);
-                  setIsEditingWord(false);
+                  cancelEditWord();
                 }
               }}
               onClick={(e) => e.stopPropagation()}
-              className="w-20 px-1 py-0.5 text-center font-sans font-bold text-sm bg-bg-page border border-border-main rounded-md outline-none focus:border-accent text-text-main z-50 relative"
-              autoFocus
+              className="w-20 px-1 py-0.5 text-center font-sans font-bold text-sm bg-bg-page border border-border-main rounded-md outline-none focus:border-accent text-text-main z-50 relative placeholder:text-gray-300 placeholder:text-xs"
               dir="rtl"
             />
           ) : (
@@ -650,22 +683,31 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
             </span>
           )}
 
-          {/* English pronunciation / transliteration in ALL CAPITAL LETTERS */}
-          {localTransliteration && (
-            <span 
-              className={`font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 ${
-                isFavorite ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
-              }`}
-            >
-              {localTransliteration}
+          {/* While editing, prompt the user; otherwise show the transliteration */}
+          {isEditingWord ? (
+            <span className="font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 text-accent">
+              ADD A WORD
             </span>
-          )}
+          ) : (
+            <>
+              {/* English pronunciation / transliteration in ALL CAPITAL LETTERS */}
+              {localTransliteration && (
+                <span
+                  className={`font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 ${
+                    isFavorite ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
+                  }`}
+                >
+                  {localTransliteration}
+                </span>
+              )}
 
-          {/* Metadata badges inside the circle if expanded/selected/root */}
-          {isRoot && !localTransliteration && (
-            <span className="text-[9px] font-sans font-semibold text-accent uppercase tracking-wider mt-1 opacity-80">
-              البداية
-            </span>
+              {/* Metadata badges inside the circle if expanded/selected/root */}
+              {isRoot && !localTransliteration && (
+                <span className="text-[9px] font-sans font-semibold text-accent uppercase tracking-wider mt-1 opacity-80">
+                  البداية
+                </span>
+              )}
+            </>
           )}
 
           {loading && (
