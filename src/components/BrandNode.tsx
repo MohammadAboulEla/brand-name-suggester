@@ -507,8 +507,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                     onClick={handleSelectClick}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
                       isFavorite
-                        ? "bg-rose-500 text-white border-rose-600 scale-110"
-                        : "bg-bg-panel text-rose-500 border-border-main hover:bg-rose-50 hover:border-rose-300"
+                        ? "bg-accent text-white border-accent-hover scale-110"
+                        : "bg-bg-panel text-accent border-border-main hover:bg-accent-bg hover:border-accent"
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
@@ -577,8 +577,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
                       extractionMode === "derivatives"
-                        ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
-                        : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                        ? "bg-accent text-white border-secondary scale-110 shadow-md font-bold"
+                        : "bg-bg-panel text-accent border-border-main hover:bg-accent-bg hover:border-accent"
                     }`}
                   >
                     {extractionMode === "derivatives" ? (
@@ -609,8 +609,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
                       extractionMode === "plurals"
-                        ? "bg-rose-600 text-white border-rose-700 scale-110 shadow-md font-bold"
-                        : "bg-bg-panel text-rose-500 border-rose-300 hover:bg-rose-50 hover:border-rose-400"
+                        ? "bg-accent text-white border-secondary scale-110 shadow-md font-bold"
+                        : "bg-bg-panel text-accent border-border-main hover:bg-accent-bg hover:border-accent"
                     }`}
                   >
                     {extractionMode === "plurals" ? (

@@ -31,15 +31,15 @@
 
 /* Amber Theme (inspired by the gold-beige image) */
 .theme-amber {
-  --bg-page: #FAF8F5;
+  --bg-page: #FBF8F3;          /* Soft ivory background */
   --bg-panel: #FFFFFF;
-  --border-color: #EBE5DC;
-  --text-main: #3C2A1A;
-  --text-muted: #8B7A6B;
-  --color-accent: #D97706;
-  --color-accent-bg: #FEF3C7;
-  --color-accent-hover: #F59E0B;
-  --color-secondary: #B45309;
+  --border-color: #EBE1D5;
+  --text-main: #1C140E;        /* Near-black warm espresso */
+  --text-muted: #6E5F52;       /* Mid-tone taupe */
+  --color-accent: #C26100;      /* Slightly deeper burnt honey */
+  --color-accent-bg: #FFF3E0;   /* Creamy accent background */
+  --color-accent-hover: #A05000;/* Rich dark hover state */
+  --color-secondary: #853A00;   /* Deep terracotta tone */
 }
 
 /* Slate Theme (modern clean blue-slate) */

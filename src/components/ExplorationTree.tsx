@@ -184,6 +184,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   const regenerateRef = useRef<any>(null);
   const handleExpandRef = useRef<any>(null);
+  const selectRef = useRef<any>(null);
   const isFakeModeRef = useRef(isFakeMode);
 
   // Keep isFakeModeRef up to date
@@ -488,7 +489,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
                     handleExpandRef.current(nid, subConstraints);
                   }
                 },
-                onSelect: (w, nid) => handleNodeSelect(w, nid),
+                onSelect: (w, nid) => selectRef.current?.(w, nid),
                 onRegenerate: (nid, subConstraints) => {
                   if (regenerateRef.current) {
                     regenerateRef.current(nid, subConstraints);
@@ -591,6 +592,10 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     handleExpandRef.current = handleExpand;
   }, [handleExpand]);
 
+  React.useEffect(() => {
+    selectRef.current = handleNodeSelect;
+  }, [handleNodeSelect]);
+
   // Handle editing a node's word directly in tree state
   const handleEditWord = useCallback((nodeId: string, newWord: string) => {
     const isArabic = /^[\u0600-\u06FF]/.test(newWord.trim());
@@ -675,7 +680,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             handleExpandRef.current(nid, constraints);
           }
         },
-        onSelect: (w: string, nid: string) => handleNodeSelect(w, nid),
+        onSelect: (w: string, nid: string) => selectRef.current?.(w, nid),
         onRegenerate: (nid: string, subConstraints: any) => {
           if (regenerateRef.current) {
             regenerateRef.current(nid, subConstraints);
@@ -937,7 +942,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             handleExpandRef.current(nodeId, constraints);
           }
         },
-        onSelect: (w, nodeId) => handleNodeSelect(w, nodeId),
+        onSelect: (w, nodeId) => selectRef.current?.(w, nodeId),
         onRegenerate: (nid, subConstraints) => {
           if (regenerateRef.current) {
             regenerateRef.current(nid, subConstraints);
@@ -1013,12 +1018,12 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       
       {/* Visual Error Message banner */}
       {errorMessage && (
-        <div className="absolute top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 bg-rose-50 border-2 border-rose-200 text-rose-800 text-xs px-4 py-3 rounded-2xl flex items-center gap-2 z-50 animate-bounce max-w-lg">
-          <Sparkles className="w-4 h-4 text-rose-500 shrink-0" />
+        <div className="absolute top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 bg-accent-bg border-2 border-accent text-text-main text-xs px-4 py-3 rounded-2xl flex items-center gap-2 z-50 max-w-lg">
+          <Sparkles className="w-4 h-4 text-accent shrink-0" />
           <span className="font-medium">{errorMessage}</span>
-          <button 
-            onClick={() => setErrorMessage(null)} 
-            className="ml-auto text-rose-400 hover:text-rose-600 font-bold px-1"
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="ml-auto text-accent hover:text-accent-hover font-bold px-1"
           >
             ×
           </button>
