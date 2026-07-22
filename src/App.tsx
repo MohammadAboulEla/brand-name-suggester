@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, ArrowRight, Copy, Check, Trash2, HelpCircle, FileText, Compass, Leaf, Palette, Settings, Heart, Sliders, Bot } from "lucide-react";
@@ -18,6 +18,26 @@ export default function App() {
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Refs for closing the right-side panels when clicking outside them (but not on their toggles).
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const rightControlsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isSidebarOpen && !isSettingsOpen) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (rightPanelRef.current?.contains(target) || rightControlsRef.current?.contains(target)) {
+        return;
+      }
+      setIsSidebarOpen(false);
+      setIsSettingsOpen(false);
+    };
+    // Capture phase: React Flow stops propagation on the canvas mousedown, so a bubbling
+    // listener would never fire. Capturing intercepts the event before that.
+    document.addEventListener("mousedown", handlePointerDown, true);
+    return () => document.removeEventListener("mousedown", handlePointerDown, true);
+  }, [isSidebarOpen, isSettingsOpen]);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isFakeMode, setIsFakeMode] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
@@ -67,6 +87,13 @@ export default function App() {
     navigator.clipboard.writeText(word);
     setCopiedWord(word);
     setTimeout(() => setCopiedWord(null), 2000);
+  };
+
+  const [copiedAll, setCopiedAll] = useState(false);
+  const handleCopyAll = () => {
+    navigator.clipboard.writeText(favorites.join("\n"));
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
   };
 
   const handleRemoveFavorite = (word: string) => {
@@ -143,7 +170,7 @@ export default function App() {
                 )}
 
                 {/* Floating Sidebar Toggle and Settings Buttons (on the right) */}
-                <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                <div ref={rightControlsRef} className="absolute top-4 right-4 z-40 flex items-center gap-2">
                   {/* AI Provider Settings Button */}
                   <Tooltip content="مزود الذكاء الاصطناعي (AI Provider)" position="bottom">
                     <button
@@ -191,6 +218,7 @@ export default function App() {
               <AnimatePresence>
                 {isSidebarOpen && (
                   <motion.div
+                    ref={rightPanelRef}
                     initial={{ x: 320, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 320, opacity: 0 }}
@@ -253,10 +281,26 @@ export default function App() {
 
                       {/* Favorites Candidates History panel */}
                       <div className="flex-1 flex flex-col overflow-hidden">
-                        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                          <Leaf className="w-3.5 h-3.5 text-accent" />
-                          <span>الأسماء المرشحة ({favorites.length})</span>
-                        </h3>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                            <Leaf className="w-3.5 h-3.5 text-accent" />
+                            <span>الأسماء المرشحة ({favorites.length})</span>
+                          </h3>
+                          {favorites.length > 0 && (
+                            <button
+                              onClick={handleCopyAll}
+                              title="Copy all names"
+                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-text-muted hover:text-accent rounded-lg hover:bg-bg-page transition-colors cursor-pointer"
+                            >
+                              {copiedAll ? (
+                                <Check className="w-3 h-3 text-accent" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                              COPY ALL
+                            </button>
+                          )}
+                        </div>
 
                         {favorites.length > 0 ? (
                           <div className="space-y-2 overflow-y-auto flex-1 pr-1">
@@ -323,6 +367,7 @@ export default function App() {
 
                 {isSettingsOpen && (
                   <motion.div
+                    ref={rightPanelRef}
                     initial={{ x: 320, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 320, opacity: 0 }}
