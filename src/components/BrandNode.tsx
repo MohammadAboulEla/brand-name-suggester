@@ -639,7 +639,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               : isRoot
               ? "bg-accent-bg border-accent font-medium text-text-main"
               : expanded
-              ? "bg-bg-page/70 border-border-main text-text-muted"
+              ? "bg-bg-panel border-border-main text-text-main"
               : "bg-bg-panel border-border-main text-text-main"
           }`}
           style={{ minWidth: "96px", minHeight: "96px" }}
