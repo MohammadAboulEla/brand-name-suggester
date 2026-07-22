@@ -152,6 +152,7 @@ export default function App() {
                     isEdgeDashed={isEdgeDashed}
                     isFakeMode={isFakeMode}
                     autoEditRoot={SKIP_LANDING}
+                    onReset={() => setShowBackConfirm(true)}
                   />
                 </ReactFlowProvider>
 

@@ -167,6 +167,7 @@ interface ExplorationTreeProps {
   isEdgeDashed?: boolean;
   isFakeMode?: boolean;
   autoEditRoot?: boolean;
+  onReset?: () => void;
 }
 
 export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
@@ -179,6 +180,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   isEdgeDashed = true,
   isFakeMode = false,
   autoEditRoot = false,
+  onReset,
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -509,7 +511,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               target: childId,
               type: edgeType,
               style: { 
-                stroke: "color-mix(in srgb, var(--color-accent) 50%, transparent)",
+                stroke: EDGE_COLOR,
                 strokeWidth: 2,
                 strokeDasharray: isEdgeDashed ? "5, 5" : undefined
               },
@@ -700,7 +702,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       target: e.target,
       type: edgeType,
       style: {
-        stroke: "#cbd5e1",
+        stroke: EDGE_COLOR,
         strokeWidth: 2,
         strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
       },
@@ -1008,10 +1010,10 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   // Clean, custom edge styling for React Flow
   const defaultEdgeOptions = useMemo(() => ({
-    style: { stroke: "#cbd5e1", strokeWidth: 2 },
+    style: { stroke: EDGE_COLOR, strokeWidth: 2 },
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      color: "#cbd5e1",
+      color: EDGE_COLOR,
       width: 14,
       height: 14,
     },
@@ -1157,6 +1159,15 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
           >
             <Download className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="بدء مشروع جديد (Start New / Reset)" position="bottom" align="end">
+          <button
+            onClick={onReset}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <RotateCcw className="w-4 h-4 text-accent" />
           </button>
         </Tooltip>
 
