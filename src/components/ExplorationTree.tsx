@@ -46,6 +46,10 @@ const MOCK_TEST_WORDS = [
 // Radial spacing distance for new children branches
 const BRANCH_DISTANCE = 250;
 
+// Themed edge color (resolves live to the active theme's accent, at 50% opacity).
+// Single source of truth so every edge-creation path stays in sync.
+const EDGE_COLOR = "color-mix(in srgb, var(--color-accent) 50%, transparent)";
+
 // localStorage key used to auto-persist the last session so work survives a refresh/close.
 const LAST_TREE_STORAGE_KEY = "brand_tree_last_session";
 
@@ -505,7 +509,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               target: childId,
               type: edgeType,
               style: { 
-                stroke: "#cbd5e1", 
+                stroke: "color-mix(in srgb, var(--color-accent) 50%, transparent)",
                 strokeWidth: 2,
                 strokeDasharray: isEdgeDashed ? "5, 5" : undefined
               },
