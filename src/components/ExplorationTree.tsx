@@ -417,6 +417,8 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           const data = await response.json();
           if (data.success && Array.isArray(data.suggestions)) {
             suggestions = data.suggestions;
+          } else if (!data.success) {
+            throw new Error(data.error || "Failed to fetch brand names");
           }
         }
 
@@ -544,7 +546,11 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         }
       } catch (error) {
         console.error("Expand branching failed:", error);
-        setErrorMessage("Network error or server timeout. Please check your connection and try again.");
+        setErrorMessage(
+          error instanceof Error && error.message
+            ? error.message
+            : "Network error or server timeout. Please check your connection and try again."
+        );
         setNodes((currentNodes) =>
           currentNodes.map((n) =>
             n.id === nodeId

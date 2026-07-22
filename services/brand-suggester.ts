@@ -108,41 +108,29 @@ export async function suggest_brand_names(params: BrandSuggestionParams): Promis
 
   // If we are in derivatives or plurals extraction mode, use the specific functions
   if (mode === "derivatives") {
-    try {
-      const derivedWords = await extractDerivatives(word, provider);
-      const suggestions = await Promise.all(
-        derivedWords.map(async (w) => {
-          const translit = await transliterate_word(w, provider);
-          return {
-            word: w,
-            transliteration: translit,
-          };
-        })
-      );
-      return suggestions;
-    } catch (error) {
-      console.error("Error in derivatives path:", error);
-      return [];
-    }
+    const derivedWords = await extractDerivatives(word, provider);
+    return Promise.all(
+      derivedWords.map(async (w) => {
+        const translit = await transliterate_word(w, provider);
+        return {
+          word: w,
+          transliteration: translit,
+        };
+      })
+    );
   }
 
   if (mode === "plurals") {
-    try {
-      const pluralWords = await extractPlurals(word, provider);
-      const suggestions = await Promise.all(
-        pluralWords.map(async (w) => {
-          const translit = await transliterate_word(w, provider);
-          return {
-            word: w,
-            transliteration: translit,
-          };
-        })
-      );
-      return suggestions;
-    } catch (error) {
-      console.error("Error in plurals path:", error);
-      return [];
-    }
+    const pluralWords = await extractPlurals(word, provider);
+    return Promise.all(
+      pluralWords.map(async (w) => {
+        const translit = await transliterate_word(w, provider);
+        return {
+          word: w,
+          transliteration: translit,
+        };
+      })
+    );
   }
 
   const constraints: string[] = [];
@@ -184,32 +172,32 @@ ${constraintsText}
   {"word": "أفق", "transliteration": "OFUQ"}
 ]`;
 
-  try {
-    const providerText = await generateWithProvider(prompt, provider, 0.8);
-    const text = providerText ?? (await (async () => {
-      const response = await ai.models.generateContent({
-        model: DEFAULT_TEXT_MODEL,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                word: { type: Type.STRING },
-                transliteration: { type: Type.STRING }
-              },
-              required: ["word", "transliteration"]
+  const providerText = await generateWithProvider(prompt, provider, 0.8);
+  const text = providerText ?? (await (async () => {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_TEXT_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              word: { type: Type.STRING },
+              transliteration: { type: Type.STRING }
             },
-            description: `List of ${MAX_SUGGESTIONS} Arabic brand name suggestions with English transliterations`,
+            required: ["word", "transliteration"]
           },
-          temperature: 0.8,
+          description: `List of ${MAX_SUGGESTIONS} Arabic brand name suggestions with English transliterations`,
         },
-      });
-      return response.text ?? null;
-    })());
+        temperature: 0.8,
+      },
+    });
+    return response.text ?? null;
+  })());
 
+  try {
     if (text) {
       const parsed = JSON.parse(extractJson(text));
       if (Array.isArray(parsed)) {
@@ -224,7 +212,7 @@ ${constraintsText}
     }
     return [];
   } catch (error) {
-    console.error("Error generating brand name suggestions:", error);
+    console.error("Error parsing brand name suggestions:", error);
     return [];
   }
 }
@@ -250,26 +238,26 @@ export async function extractDerivatives(word: string, provider?: ProviderReques
 المخرجات يجب أن تكون عبارة عن JSON Array من النصوص فقط، بدون أي شرح أو نص إضافي، كما في المثال التالي:
 ["بَحّار", "بَحري", "إبحار"]`;
 
-  try {
-    const providerText = await generateWithProvider(prompt, provider);
-    const text = providerText ?? (await (async () => {
-      const response = await ai.models.generateContent({
-        model: DEFAULT_TEXT_MODEL,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.STRING,
-            },
-            description: `List of up to ${MAX_SUGGESTIONS} morphological derivatives in Arabic.`,
+  const providerText = await generateWithProvider(prompt, provider);
+  const text = providerText ?? (await (async () => {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_TEXT_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING,
           },
+          description: `List of up to ${MAX_SUGGESTIONS} morphological derivatives in Arabic.`,
         },
-      });
-      return response.text ?? null;
-    })());
+      },
+    });
+    return response.text ?? null;
+  })());
 
+  try {
     if (text) {
       const parsed = JSON.parse(extractJson(text));
       const names = Array.isArray(parsed) ? parsed : Object.values(parsed || {}).find(Array.isArray);
@@ -280,7 +268,7 @@ export async function extractDerivatives(word: string, provider?: ProviderReques
     }
     return [];
   } catch (error) {
-    console.error('Error extracting derivatives:', error);
+    console.error('Error parsing derivatives:', error);
     return [];
   }
 }
@@ -305,26 +293,26 @@ export async function extractPlurals(word: string, provider?: ProviderRequest | 
 المخرجات يجب أن تكون عبارة عن JSON Array من النصوص فقط، بدون أي شرح أو نص إضافي، كما في المثال التالي:
 ["رياض", "روضات"]`;
 
-  try {
-    const providerText = await generateWithProvider(prompt, provider);
-    const text = providerText ?? (await (async () => {
-      const response = await ai.models.generateContent({
-        model: DEFAULT_TEXT_MODEL,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.STRING,
-            },
-            description: `List of up to ${MAX_SUGGESTIONS} valid Arabic plural forms.`,
+  const providerText = await generateWithProvider(prompt, provider);
+  const text = providerText ?? (await (async () => {
+    const response = await ai.models.generateContent({
+      model: DEFAULT_TEXT_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING,
           },
+          description: `List of up to ${MAX_SUGGESTIONS} valid Arabic plural forms.`,
         },
-      });
-      return response.text ?? null;
-    })());
+      },
+    });
+    return response.text ?? null;
+  })());
 
+  try {
     if (text) {
       const parsed = JSON.parse(extractJson(text));
       const names = Array.isArray(parsed) ? parsed : Object.values(parsed || {}).find(Array.isArray);
@@ -335,7 +323,7 @@ export async function extractPlurals(word: string, provider?: ProviderRequest | 
     }
     return [];
   } catch (error) {
-    console.error('Error extracting plurals:', error);
+    console.error('Error parsing plurals:', error);
     return [];
   }
 }
