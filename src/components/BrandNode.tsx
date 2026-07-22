@@ -635,7 +635,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
             expanded || loading || isEditingWord ? "cursor-default" : "cursor-pointer hover:border-accent"
           } ${
             isFavorite
-              ? "bg-rose-50 border-rose-400 scale-105"
+              ? "bg-accent border-accent-hover text-white scale-105 shadow-md"
               : isRoot
               ? "bg-accent-bg border-accent font-medium text-text-main"
               : expanded
@@ -686,8 +686,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
             />
           ) : (
             <span 
-              className={`font-sans font-bold text-base md:text-lg text-center leading-tight tracking-wide text-text-main ${
-                isFavorite ? "text-rose-950" : isRoot ? "text-accent" : ""
+              className={`font-sans font-bold text-base md:text-lg text-center leading-tight tracking-wide ${
+                isFavorite ? "text-white" : isRoot ? "text-accent" : "text-text-main"
               }`}
               dir="rtl"
             >
@@ -706,7 +706,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               {localTransliteration && (
                 <span
                   className={`font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 ${
-                    isFavorite ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
+                    isFavorite ? "text-white/80" : isRoot ? "text-accent-hover" : "text-text-muted"
                   }`}
                 >
                   {localTransliteration}
