@@ -730,6 +730,16 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     }
   }, [rootWord, nodes.length, resetTree]);
 
+  // Keep each node's favorite-heart state in sync with the favorites list (independent of tree selection)
+  React.useEffect(() => {
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => ({
+        ...n,
+        data: { ...n.data, isFavorite: favorites.includes(n.data.word as string) },
+      }))
+    );
+  }, [favorites, setNodes]);
+
   // Synchronize edge types and line styles dynamically for existing edges
   React.useEffect(() => {
     setEdges((prevEdges) =>

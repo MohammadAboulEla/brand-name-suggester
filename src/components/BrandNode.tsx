@@ -8,7 +8,7 @@ import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
 export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const nodeData = data as unknown as BrandNodeData;
-  const { word, loading, expanded, isRoot, selected, onExpand, onSelect, onRegenerate, onEditWord } = nodeData;
+  const { word, loading, expanded, isRoot, isFavorite, onExpand, onSelect, onRegenerate, onEditWord } = nodeData;
 
   const [isHovered, setIsHovered] = useState(false);
   const [showLetterMenu, setShowLetterMenu] = useState(false);
@@ -447,12 +447,12 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                   <button
                     onClick={handleSelectClick}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border cursor-pointer ${
-                      selected
+                      isFavorite
                         ? "bg-rose-500 text-white border-rose-600 scale-110"
                         : "bg-bg-panel text-rose-500 border-border-main hover:bg-rose-50 hover:border-rose-300"
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${selected ? "fill-current" : ""}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
                   </button>
                 </Tooltip>
               </div>
@@ -575,7 +575,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           className={`w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all relative border-2 ${
             expanded || loading || isEditingWord ? "cursor-default" : "cursor-pointer hover:border-accent"
           } ${
-            selected
+            isFavorite
               ? "bg-rose-50 border-rose-400 scale-105"
               : isRoot
               ? "bg-accent-bg border-accent font-medium text-text-main"
@@ -642,8 +642,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           ) : (
             <span 
               className={`font-sans font-bold text-base md:text-lg text-center leading-tight tracking-wide text-text-main ${
-                selected ? "text-rose-950" : isRoot ? "text-accent" : ""
-              }`} 
+                isFavorite ? "text-rose-950" : isRoot ? "text-accent" : ""
+              }`}
               dir="rtl"
             >
               {word}
@@ -654,7 +654,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           {localTransliteration && (
             <span 
               className={`font-sans font-extrabold text-[9px] md:text-[10px] text-center tracking-wider mt-1 uppercase leading-none opacity-90 ${
-                selected ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
+                isFavorite ? "text-rose-700" : isRoot ? "text-accent-hover" : "text-text-muted"
               }`}
             >
               {localTransliteration}
