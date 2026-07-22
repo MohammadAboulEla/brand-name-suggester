@@ -214,29 +214,29 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
 
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-t-2 border-border-main shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-          <button
-            onClick={handleTestConnection}
-            disabled={testState === "testing"}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-bg-page border-2 border-border-main hover:bg-border-main/20 disabled:opacity-60 rounded-xl text-xs font-bold text-text-main transition-colors cursor-pointer shrink-0"
-          >
-            {testState === "testing" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Test connection</span>
-          </button>
+        <div className="flex flex-col gap-2 px-5 py-2.5 border-t-2 border-border-main shrink-0">
           {testMessage && (
-            <div className={`flex items-center gap-1.5 text-xs font-semibold truncate ${testState === "success" ? "text-emerald-500" : "text-rose-500"}`}>
-              {testState === "success" ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <XCircle className="w-3.5 h-3.5 shrink-0" />}
-              <span className="truncate">{testMessage}</span>
+            <div className={`flex items-start gap-1.5 text-xs font-semibold ${testState === "success" ? "text-emerald-500" : "text-rose-500"}`}>
+              {testState === "success" ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+              <span className="break-words">{testMessage}</span>
             </div>
           )}
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={handleTestConnection}
+              disabled={testState === "testing"}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-bg-page border-2 border-border-main hover:bg-border-main/20 disabled:opacity-60 rounded-xl text-xs font-bold text-text-main transition-colors cursor-pointer shrink-0"
+            >
+              {testState === "testing" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>Test connection</span>
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl text-xs transition-all cursor-pointer border border-secondary"
+            >
+              Done
+            </button>
           </div>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl text-xs transition-all cursor-pointer border border-secondary"
-          >
-            Done
-          </button>
         </div>
       </motion.div>
     </div>

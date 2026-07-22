@@ -14,6 +14,6 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
   { id: 'fireworks', label: 'Fireworks AI', baseURL: 'https://api.fireworks.ai/inference/v1', model: 'accounts/fireworks/models/llama-v4-70b-instruct', envVar: 'FIREWORKS_API_KEY' },
   { id: 'perplexity', label: 'Perplexity', baseURL: 'https://api.perplexity.ai', model: 'sonar', envVar: 'PERPLEXITY_API_KEY' },
   { id: 'cerebras', label: 'Cerebras', baseURL: 'https://api.cerebras.ai/v1', model: 'llama-4-70b', envVar: 'CEREBRAS_API_KEY' },
-  { id: 'ollama', label: 'Ollama (local)', baseURL: 'http://localhost:11434/v1', model: 'llama4', envVar: 'OLLAMA_API_KEY' },
+  { id: 'ollama', label: 'Ollama (local)', baseURL: 'http://localhost:11434/v1', model: 'llama3.1:8b', envVar: 'OLLAMA_API_KEY' },
   { id: 'lmstudio', label: 'LM Studio (local)', baseURL: 'http://localhost:1234/v1', model: 'local-model', envVar: 'LMSTUDIO_API_KEY' },
 ];
