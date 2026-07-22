@@ -543,7 +543,7 @@ export default function App() {
                       setSeedInput("");
                       setShowBackConfirm(false);
                     }}
-                    className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl text-sm transition-all cursor-pointer shadow-sm shadow-rose-500/10 border border-rose-600/30"
+                    className="flex-1 py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-xl text-sm transition-all cursor-pointer shadow-sm shadow-accent/10 border border-accent-hover/30"
                   >
                     نعم، أريد العودة
                   </button>
