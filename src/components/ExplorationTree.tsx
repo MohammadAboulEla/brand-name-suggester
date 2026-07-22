@@ -12,7 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { BrandNodeData } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -671,6 +671,62 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     }
   }, [applyProjectData]);
 
+  const handleRemoveDuplicates = useCallback(() => {
+    // Depth of a node = distance from root, walking the parentId chain.
+    const depthOf = (node: Node): number => {
+      let depth = 0;
+      let current = node;
+      while (current.data.parentId) {
+        const parent = nodes.find((n) => n.id === current.data.parentId);
+        if (!parent) break;
+        current = parent;
+        depth++;
+      }
+      return depth;
+    };
+
+    // Group nodes by word; keep the shallowest (closest to root) as the parent-priority winner.
+    const byWord = new Map<string, Node[]>();
+    for (const node of nodes) {
+      const word = node.data.word as string;
+      if (!byWord.has(word)) byWord.set(word, []);
+      byWord.get(word)!.push(node);
+    }
+
+    const targetsToDelete = new Set<string>();
+    for (const group of byWord.values()) {
+      if (group.length < 2) continue;
+      const sorted = [...group].sort((a, b) => depthOf(a) - depthOf(b));
+      // Keep sorted[0] (shallowest); remove the rest along with their descendants.
+      for (const dup of sorted.slice(1)) {
+        if (dup.data.isRoot) continue; // never remove the root
+        targetsToDelete.add(dup.id);
+        for (const descId of getDescendants(dup.id, nodes)) targetsToDelete.add(descId);
+      }
+    }
+
+    if (targetsToDelete.size === 0) {
+      setErrorMessage("لا توجد أسماء مكررة في الشجرة.");
+      return;
+    }
+
+    setNodes((currentNodes) => {
+      const remaining = currentNodes.filter((n) => !targetsToDelete.has(n.id));
+      // Collapse parents that lost all their children.
+      return remaining.map((n) =>
+        n.data.expanded && !remaining.some((c) => c.data.parentId === n.id)
+          ? { ...n, data: { ...n.data, expanded: false } }
+          : n
+      );
+    });
+
+    setEdges((currentEdges) =>
+      currentEdges.filter(
+        (edge) => !targetsToDelete.has(edge.source) && !targetsToDelete.has(edge.target)
+      )
+    );
+  }, [nodes, setNodes, setEdges]);
+
   const handleSaveProject = useCallback(() => {
     try {
       const projectPayload = serializeProject();
@@ -905,6 +961,18 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         <Controls position="bottom-right" showInteractive={false} className="bg-bg-panel rounded-2xl border-2 border-border-main text-text-muted" />
       </ReactFlow>
 
+      {/* Remove Duplicates (standalone, top-left) */}
+      <div className="absolute top-4 left-4 z-40">
+        <Tooltip content="إزالة الأسماء المكررة (Remove Duplicate Names)" position="bottom" align="start">
+          <button
+            onClick={handleRemoveDuplicates}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <Eraser className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+      </div>
+
       {/* Project State Utilities: Load, Save, Reset */}
       <div className="absolute top-4 right-[192px] z-40 flex items-center gap-2">
         <input
@@ -915,7 +983,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           className="hidden"
         />
 
-        <Tooltip content="تحميل مشروع من جهازك (Open/Load Project)" position="bottom">
+        <Tooltip content="تحميل مشروع من جهازك (Open/Load Project)" position="bottom" align="end">
           <button
             onClick={handleOpenProjectClick}
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
@@ -924,7 +992,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip content="حفظ المشروع الحالي (Save Project)" position="bottom">
+        <Tooltip content="حفظ المشروع الحالي (Save Project)" position="bottom" align="end">
           <button
             onClick={handleSaveProject}
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
@@ -933,7 +1001,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip content="استرجاع آخر عمل محفوظ (Load Last Tree)" position="bottom">
+        <Tooltip content="استرجاع آخر عمل محفوظ (Load Last Tree)" position="bottom" align="end">
           <button
             onClick={handleLoadLastTree}
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"

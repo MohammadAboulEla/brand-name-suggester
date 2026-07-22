@@ -84,6 +84,21 @@ function extractJson(text: string): string {
   return candidate;
 }
 
+// The model occasionally ignores the "transliteration only" instruction and returns a whole
+// paragraph/document. A real transliteration is a short run of Latin letters, so keep only the
+// first line, strip anything that isn't A-Z/space/hyphen/apostrophe, and cap the length.
+function sanitizeTransliteration(raw: string, fallback: string): string {
+  const firstLine = raw.split(/[\r\n]/, 1)[0] ?? "";
+  const cleaned = firstLine
+    .toUpperCase()
+    .replace(/[^A-Z '\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 30)
+    .trim();
+  return cleaned || fallback.toUpperCase();
+}
+
 export async function suggest_brand_names(params: BrandSuggestionParams): Promise<SuggestedBrand[]> {
   const { word, letter_count, tone, mode, provider } = params;
 
@@ -198,10 +213,13 @@ ${constraintsText}
     if (text) {
       const parsed = JSON.parse(extractJson(text));
       if (Array.isArray(parsed)) {
-        return parsed.map((item: any) => ({
-          word: String(item.word || "").trim(),
-          transliteration: String(item.transliteration || "").trim().toUpperCase()
-        })).filter(item => item.word).slice(0, MAX_SUGGESTIONS);
+        return parsed.map((item: any) => {
+          const w = String(item.word || "").trim();
+          return {
+            word: w,
+            transliteration: sanitizeTransliteration(String(item.transliteration || ""), w)
+          };
+        }).filter(item => item.word).slice(0, MAX_SUGGESTIONS);
       }
     }
     return [];
@@ -345,7 +363,7 @@ Output: RAWDAH`;
       });
       return response.text ?? null;
     })());
-    return text ? text.trim().toUpperCase() : word.toUpperCase();
+    return text ? sanitizeTransliteration(text, word) : word.toUpperCase();
   } catch (e) {
     console.error("Transliteration failed:", e);
     return word.toUpperCase();

@@ -196,7 +196,7 @@ export default function App() {
                   </Tooltip>
 
                   {/* Favorite Button (icon only, "المرشحات" removed) */}
-                  <Tooltip content="الأسماء المرشحة (Favorites)" position="bottom">
+                  <Tooltip content="الأسماء المرشحة (Favorites)" position="bottom" align="end">
                     <button
                       onClick={() => {
                         setIsSidebarOpen(!isSidebarOpen);

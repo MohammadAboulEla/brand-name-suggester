@@ -12,6 +12,8 @@ interface TooltipProps {
 
   position?: "top" | "bottom" | "left" | "right";
 
+  align?: "start" | "center" | "end";
+
   disabled?: boolean;
 
 }
@@ -25,6 +27,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
   content,
 
   position = "top",
+
+  align = "center",
 
   disabled = false,
 
@@ -46,17 +50,25 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   let placementClasses = "";
 
+  // Horizontal anchoring for top/bottom tooltips (keeps them on-screen near edges).
+  const horizontalAlign =
+    align === "start"
+      ? "left-0"
+      : align === "end"
+      ? "right-0"
+      : "left-1/2 -translate-x-1/2";
+
   switch (position) {
 
     case "top":
 
-      placementClasses = "bottom-full left-1/2 -translate-x-1/2 mb-1.5";
+      placementClasses = `bottom-full ${horizontalAlign} mb-1.5`;
 
       break;
 
     case "bottom":
 
-      placementClasses = "top-full left-1/2 -translate-x-1/2 mt-1.5";
+      placementClasses = `top-full ${horizontalAlign} mt-1.5`;
 
       break;
 
@@ -102,6 +114,11 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
     const colorVar = isBorder ? "var(--border-color)" : "var(--bg-panel)";
 
+    // Horizontal arrow anchor: point at the trigger (~16px in) when edge-aligned.
+    const arrowLeft = align === "start" ? "16px" : align === "end" ? "auto" : "50%";
+    const arrowRight = align === "end" ? "16px" : "auto";
+    const arrowTranslateX = align === "center" ? "translateX(-50%)" : "";
+
 
 
     switch (position) {
@@ -110,9 +127,11 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
         styles.top = offset;
 
-        styles.left = "50%";
+        styles.left = arrowLeft;
 
-        styles.transform = "translateX(-50%)";
+        styles.right = arrowRight;
+
+        styles.transform = arrowTranslateX;
 
         styles.borderTopColor = colorVar;
 
@@ -122,9 +141,11 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
         styles.bottom = offset;
 
-        styles.left = "50%";
+        styles.left = arrowLeft;
 
-        styles.transform = "translateX(-50%)";
+        styles.right = arrowRight;
+
+        styles.transform = arrowTranslateX;
 
         styles.borderBottomColor = colorVar;
 
