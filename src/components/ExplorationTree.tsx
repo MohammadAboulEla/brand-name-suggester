@@ -8,11 +8,12 @@ import {
   Node,
   Edge,
   MarkerType,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { BrandNodeData } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -124,6 +125,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const { fitView } = useReactFlow();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
@@ -727,6 +729,52 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     );
   }, [nodes, setNodes, setEdges]);
 
+  const handleAutoLayout = useCallback(() => {
+    const root = nodes.find((n) => n.data.isRoot);
+    if (!root) return;
+
+    const H_SPACING = 165; // horizontal gap between sibling subtrees (compact)
+    const V_SPACING = 190; // vertical gap between depth levels (compact)
+
+    const childrenOf = (id: string) =>
+      nodes.filter((n) => n.data.parentId === id);
+
+    // Classic tidy-tree pass: leaves get sequential x slots, parents center over children.
+    const positions = new Map<string, { x: number; y: number }>();
+    let nextLeafX = 0;
+
+    const assign = (nodeId: string, depth: number): number => {
+      const children = childrenOf(nodeId);
+      const y = depth * V_SPACING;
+      let x: number;
+      if (children.length === 0) {
+        x = nextLeafX * H_SPACING;
+        nextLeafX++;
+      } else {
+        const childXs = children.map((c) => assign(c.id, depth + 1));
+        x = (childXs[0] + childXs[childXs.length - 1]) / 2;
+      }
+      positions.set(nodeId, { x, y });
+      return x;
+    };
+    assign(root.id, 0);
+
+    // Keep the root anchored at its current position; shift the whole tree by the delta.
+    const rootPos = positions.get(root.id)!;
+    const dx = root.position.x - rootPos.x;
+    const dy = root.position.y - rootPos.y;
+
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        const p = positions.get(n.id);
+        return p ? { ...n, position: { x: p.x + dx, y: p.y + dy } } : n;
+      })
+    );
+
+    // Let the position updates commit before reframing the viewport.
+    setTimeout(() => fitView({ duration: 500, padding: 0.2 }), 50);
+  }, [nodes, setNodes, fitView]);
+
   const handleSaveProject = useCallback(() => {
     try {
       const projectPayload = serializeProject();
@@ -961,14 +1009,23 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         <Controls position="bottom-right" showInteractive={false} className="bg-bg-panel rounded-2xl border-2 border-border-main text-text-muted" />
       </ReactFlow>
 
-      {/* Remove Duplicates (standalone, top-left) */}
-      <div className="absolute top-4 left-4 z-40">
+      {/* Cleanup tools (standalone, top-left) */}
+      <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
         <Tooltip content="إزالة الأسماء المكررة (Remove Duplicate Names)" position="bottom" align="start">
           <button
             onClick={handleRemoveDuplicates}
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
           >
             <Eraser className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="إعادة ترتيب وتنظيم الشجرة (Auto-arrange Tree)" position="bottom" align="start">
+          <button
+            onClick={handleAutoLayout}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <Network className="w-4 h-4 text-accent" />
           </button>
         </Tooltip>
       </div>
