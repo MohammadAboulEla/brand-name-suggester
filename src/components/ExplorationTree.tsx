@@ -1113,7 +1113,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip content="ترتيب مضغوط بأصغر مساحة (Compact Arrange)" position="bottom" align="start">
+        <Tooltip content="ترتيب مضغوط بأصغر مساحة (Compact Arrange)" position="bottom" align="center">
           <button
             onClick={handleCompactLayout}
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
