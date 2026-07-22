@@ -52,12 +52,14 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   useEffect(() => {
     if (isEditingWord) {
-      // Defer a frame so the input is mounted/measured by React Flow before focusing.
-      const raf = requestAnimationFrame(() => {
+      // Defer past React Flow's own mount/fitView focus handling so the caret lands in the
+      // input and not on the node wrapper. A short timeout wins the focus race more reliably
+      // than a single rAF on first start.
+      const t = setTimeout(() => {
         editInputRef.current?.focus();
         editInputRef.current?.select();
-      });
-      return () => cancelAnimationFrame(raf);
+      }, 60);
+      return () => clearTimeout(t);
     }
   }, [isEditingWord]);
 
