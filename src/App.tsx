@@ -241,76 +241,40 @@ export default function App() {
                         </span>
                       </div>
 
-                      {/* Active selection banner */}
-                      <div className="mb-6">
-                        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-accent" />
-                          <span>الاسم المختار حالياً (Selected Name)</span>
-                        </h3>
-
-                        {selectedWord ? (
-                          <div className="bg-accent-bg/40 border-2 border-accent rounded-2xl p-4 text-center relative overflow-hidden">
-                            <p className="font-display font-black text-3xl text-text-main mb-3" dir="rtl">
-                              {selectedWord}
-                            </p>
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleCopy(selectedWord)}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-bg-panel border-2 border-border-main hover:bg-bg-page rounded-xl text-xs font-semibold text-text-main transition-colors cursor-pointer"
-                              >
-                                {copiedWord === selectedWord ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5" />
-                                    <span>تم النسخ</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>نسخ الاسم</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="border-2 border-dashed border-border-main rounded-2xl p-4 text-center text-xs text-text-muted bg-bg-page/40">
-                            اضغط على علامة الصح في أي كلمة لترشيحها كاسم لعلامتك التجارية.
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Favorites Candidates History panel */}
-                      <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
-                            <Leaf className="w-3.5 h-3.5 text-accent" />
-                            <span>الأسماء المرشحة ({favorites.length})</span>
-                          </h3>
-                          {favorites.length > 0 && (
-                            <button
-                              onClick={handleCopyAll}
-                              title="Copy all names"
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-text-muted hover:text-accent rounded-lg hover:bg-bg-page transition-colors cursor-pointer"
-                            >
-                              {copiedAll ? (
-                                <Check className="w-3 h-3 text-accent" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                              COPY ALL
-                            </button>
+                      {/* Copy all favorites button */}
+                      {favorites.length > 0 && (
+                        <button
+                          onClick={handleCopyAll}
+                          title="Copy all names, each on a new line"
+                          className="mb-5 w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent hover:bg-accent/90 text-white rounded-2xl text-sm font-bold transition-colors cursor-pointer shadow-sm"
+                        >
+                          {copiedAll ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span>تم نسخ جميع الأسماء</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              <span>نسخ كل الأسماء ({favorites.length})</span>
+                            </>
                           )}
-                        </div>
+                        </button>
+                      )}
+
+                      {/* Favorites Candidates panel */}
+                      <div className="flex-1 flex flex-col overflow-hidden">
+                        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                          <Leaf className="w-3.5 h-3.5 text-accent" />
+                          <span>الأسماء المرشحة ({favorites.length})</span>
+                        </h3>
 
                         {favorites.length > 0 ? (
                           <div className="space-y-2 overflow-y-auto flex-1 pr-1">
                             {favorites.map((favWord) => (
                               <div
                                 key={favWord}
-                                className={`flex items-center justify-between p-2.5 rounded-xl border-2 transition-colors ${selectedWord === favWord
-                                    ? "bg-accent-bg/30 border-accent"
-                                    : "bg-bg-page/50 border-border-main hover:border-accent/40"
-                                  }`}
+                                className="flex items-center justify-between p-2.5 rounded-xl border-2 transition-colors bg-bg-page/50 border-border-main hover:border-accent/40"
                               >
                                 <div className="flex items-center gap-1.5">
                                   <button
@@ -333,7 +297,7 @@ export default function App() {
                                   </button>
                                 </div>
                                 <span
-                                  onClick={() => setSelectedWord(favWord)}
+                                  onClick={() => handleCopy(favWord)}
                                   className="font-display font-bold text-base text-text-main hover:text-accent cursor-pointer pr-2 transition-colors"
                                   dir="rtl"
                                 >
