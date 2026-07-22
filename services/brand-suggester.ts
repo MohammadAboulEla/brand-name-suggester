@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from "openai";
 
-const DEFAULT_TEXT_MODEL = "gemini-3.1-flash-lite";
+const DEFAULT_TEXT_MODEL = "gemini-flash-lite-latest";
 const MAX_SUGGESTIONS = 5;
 
 const ai = new GoogleGenAI({
@@ -57,11 +57,31 @@ async function generateWithProvider(prompt: string, provider: ProviderRequest | 
   return completion.choices[0]?.message?.content ?? null;
 }
 
-// Some OpenAI-compatible providers wrap JSON responses in markdown code fences; strip those before parsing.
+// Some OpenAI-compatible providers wrap JSON responses in markdown code fences, or prepend/append
+// prose despite instructions not to; strip fences first, then fall back to slicing out the
+// outermost [...]/{...} span so stray commentary around valid JSON doesn't break parsing.
 function extractJson(text: string): string {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  return (fenced ? fenced[1] : trimmed).trim();
+  const candidate = (fenced ? fenced[1] : trimmed).trim();
+
+  if (candidate.startsWith("[") || candidate.startsWith("{")) {
+    return candidate;
+  }
+
+  const arrayStart = candidate.indexOf("[");
+  const arrayEnd = candidate.lastIndexOf("]");
+  if (arrayStart !== -1 && arrayEnd > arrayStart) {
+    return candidate.slice(arrayStart, arrayEnd + 1);
+  }
+
+  const objectStart = candidate.indexOf("{");
+  const objectEnd = candidate.lastIndexOf("}");
+  if (objectStart !== -1 && objectEnd > objectStart) {
+    return candidate.slice(objectStart, objectEnd + 1);
+  }
+
+  return candidate;
 }
 
 export async function suggest_brand_names(params: BrandSuggestionParams): Promise<SuggestedBrand[]> {
@@ -207,7 +227,10 @@ export async function extractDerivatives(word: string, provider?: ProviderReques
 الشروط:
 - أعد الكلمات مجردة وبدون شرح.
 - يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} مشتقات كحد أقصى (Up to ${MAX_SUGGESTIONS} words).
-- تأكد من صحة الوزن الصرفي للكلمات الناتجة.`;
+- تأكد من صحة الوزن الصرفي للكلمات الناتجة.
+
+المخرجات يجب أن تكون عبارة عن JSON Array من النصوص فقط، بدون أي شرح أو نص إضافي، كما في المثال التالي:
+["بَحّار", "بَحري", "إبحار"]`;
 
   try {
     const providerText = await generateWithProvider(prompt, provider);
@@ -230,10 +253,12 @@ export async function extractDerivatives(word: string, provider?: ProviderReques
     })());
 
     if (text) {
-      const names = JSON.parse(extractJson(text));
+      const parsed = JSON.parse(extractJson(text));
+      const names = Array.isArray(parsed) ? parsed : Object.values(parsed || {}).find(Array.isArray);
       if (Array.isArray(names)) {
         return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
+      console.error('Error extracting derivatives: response was not an array', text);
     }
     return [];
   } catch (error) {
@@ -257,7 +282,10 @@ export async function extractPlurals(word: string, provider?: ProviderRequest | 
 
 الشروط:
 - أعد الكلمات مجردة وبدون شرح.
-- يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} صيغ جمع كحد أقصى (Up to ${MAX_SUGGESTIONS} words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.`;
+- يمكنك إرجاع ما يصل إلى ${MAX_SUGGESTIONS} صيغ جمع كحد أقصى (Up to ${MAX_SUGGESTIONS} words). إذا لم يكن للكلمة إلا جمع واحد أو اثنين صحيحين، اكتفِ بهما فقط ولا تختلق جموعاً خاطئة.
+
+المخرجات يجب أن تكون عبارة عن JSON Array من النصوص فقط، بدون أي شرح أو نص إضافي، كما في المثال التالي:
+["رياض", "روضات"]`;
 
   try {
     const providerText = await generateWithProvider(prompt, provider);
@@ -280,10 +308,12 @@ export async function extractPlurals(word: string, provider?: ProviderRequest | 
     })());
 
     if (text) {
-      const names = JSON.parse(extractJson(text));
+      const parsed = JSON.parse(extractJson(text));
+      const names = Array.isArray(parsed) ? parsed : Object.values(parsed || {}).find(Array.isArray);
       if (Array.isArray(names)) {
         return names.slice(0, MAX_SUGGESTIONS).map((n) => String(n));
       }
+      console.error('Error extracting plurals: response was not an array', text);
     }
     return [];
   } catch (error) {
