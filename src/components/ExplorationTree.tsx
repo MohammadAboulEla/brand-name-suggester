@@ -13,7 +13,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { BrandNodeData } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -99,6 +99,59 @@ const getDescendants = (nodeId: string, currentNodes: Node[]): string[] => {
   }
   return descendants;
 };
+
+// Packed layout: lay each subtree out inside its own bounding box, wrapping siblings
+// into a near-square block (row-packing) instead of a single wide row, so the overall
+// width/height stay small. Same-depth nodes are NOT forced onto the same line.
+type PackedBox = { pos: Map<string, { x: number; y: number }>; w: number; h: number };
+
+function packSubtree(
+  nodeId: string,
+  childrenMap: Map<string, string[]>,
+  nodeSize: number,
+  gap: number
+): PackedBox {
+  const kids = childrenMap.get(nodeId) ?? [];
+  if (kids.length === 0) {
+    return { pos: new Map([[nodeId, { x: 0, y: 0 }]]), w: nodeSize, h: nodeSize };
+  }
+
+  const boxes = kids.map((k) => packSubtree(k, childrenMap, nodeSize, gap));
+
+  // Aim for a roughly square children block: wrap once a row exceeds this target width.
+  const totalArea = boxes.reduce((s, b) => s + (b.w + gap) * (b.h + gap), 0);
+  const targetW = Math.max(Math.max(...boxes.map((b) => b.w)), Math.sqrt(totalArea) * 1.3);
+
+  const placed: { box: PackedBox; ox: number; oy: number }[] = [];
+  let x = 0, y = 0, rowH = 0, maxRowW = 0;
+  for (const b of boxes) {
+    if (x > 0 && x + b.w > targetW) {
+      y += rowH + gap;
+      x = 0;
+      rowH = 0;
+    }
+    placed.push({ box: b, ox: x, oy: y });
+    x += b.w + gap;
+    rowH = Math.max(rowH, b.h);
+    maxRowW = Math.max(maxRowW, x - gap);
+  }
+
+  const blockW = maxRowW;
+  const blockH = y + rowH;
+  const totalW = Math.max(nodeSize, blockW);
+  const childrenYOffset = nodeSize + gap;
+
+  const pos = new Map<string, { x: number; y: number }>();
+  pos.set(nodeId, { x: (totalW - nodeSize) / 2, y: 0 }); // parent centered over its block
+  const blockXOffset = (totalW - blockW) / 2;
+  for (const { box, ox, oy } of placed) {
+    for (const [id, p] of box.pos) {
+      pos.set(id, { x: blockXOffset + ox + p.x, y: childrenYOffset + oy + p.y });
+    }
+  }
+
+  return { pos, w: totalW, h: childrenYOffset + blockH };
+}
 
 interface ExplorationTreeProps {
   rootWord: string;
@@ -775,6 +828,37 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     setTimeout(() => fitView({ duration: 500, padding: 0.2 }), 50);
   }, [nodes, setNodes, fitView]);
 
+  const handleCompactLayout = useCallback(() => {
+    const root = nodes.find((n) => n.data.isRoot);
+    if (!root) return;
+
+    const childrenMap = new Map<string, string[]>();
+    for (const n of nodes) {
+      const pid = n.data.parentId as string | undefined;
+      if (!pid) continue;
+      if (!childrenMap.has(pid)) childrenMap.set(pid, []);
+      childrenMap.get(pid)!.push(n.id);
+    }
+
+    const NODE_SIZE = 96; // BrandNode is w-24 h-24
+    const GAP = 28;
+    const { pos } = packSubtree(root.id, childrenMap, NODE_SIZE, GAP);
+
+    // Keep the root anchored at its current position; shift the whole tree by the delta.
+    const rootPos = pos.get(root.id)!;
+    const dx = root.position.x - rootPos.x;
+    const dy = root.position.y - rootPos.y;
+
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        const p = pos.get(n.id);
+        return p ? { ...n, position: { x: p.x + dx, y: p.y + dy } } : n;
+      })
+    );
+
+    setTimeout(() => fitView({ duration: 500, padding: 0.2 }), 50);
+  }, [nodes, setNodes, fitView]);
+
   const handleSaveProject = useCallback(() => {
     try {
       const projectPayload = serializeProject();
@@ -1026,6 +1110,15 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
           >
             <Network className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="ترتيب مضغوط بأصغر مساحة (Compact Arrange)" position="bottom" align="start">
+          <button
+            onClick={handleCompactLayout}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <Shrink className="w-4 h-4 text-accent" />
           </button>
         </Tooltip>
       </div>
