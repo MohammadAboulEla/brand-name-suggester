@@ -12,7 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { BrandNodeData } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -44,6 +44,9 @@ const MOCK_TEST_WORDS = [
 
 // Radial spacing distance for new children branches
 const BRANCH_DISTANCE = 250;
+
+// localStorage key used to auto-persist the last session so work survives a refresh/close.
+const LAST_TREE_STORAGE_KEY = "brand_tree_last_session";
 
 // Helper to resolve overlapping nodes iteratively
 function resolveOverlaps(
@@ -560,34 +563,117 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Serialize the current tree into a plain, storable payload (shared by file save + autosave).
+  const serializeProject = useCallback(() => ({
+    version: "1.0.0",
+    rootWord,
+    selectedWord,
+    favorites,
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: {
+        word: n.data.word,
+        transliteration: n.data.transliteration,
+        parentId: n.data.parentId,
+        isRoot: n.data.isRoot,
+        expanded: n.data.expanded,
+        tone: n.data.tone,
+        letter_count: n.data.letter_count,
+        selected: n.data.selected,
+      },
+    })),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+    })),
+  }), [rootWord, selectedWord, favorites, nodes, edges]);
+
+  // Rebuild live nodes/edges (with callbacks re-attached) from a serialized payload and apply them.
+  const applyProjectData = useCallback((data: any): boolean => {
+    if (!data || typeof data !== "object") return false;
+    if (!data.rootWord || !Array.isArray(data.nodes)) return false;
+
+    const isArabic = /^[؀-ۿ]/.test(String(data.rootWord).trim());
+    if (!isArabic) {
+      setErrorMessage("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
+      return false;
+    }
+
+    const reconstructedNodes: Node[] = data.nodes.map((n: any) => ({
+      id: n.id,
+      type: n.type || "brandNode",
+      position: n.position,
+      data: {
+        word: n.data.word,
+        transliteration: n.data.transliteration,
+        parentId: n.data.parentId,
+        isRoot: n.data.isRoot,
+        expanded: n.data.expanded,
+        tone: n.data.tone,
+        letter_count: n.data.letter_count,
+        selected: n.data.selected,
+        onExpand: (nid: string, constraints: any) => {
+          if (handleExpandRef.current) {
+            handleExpandRef.current(nid, constraints);
+          }
+        },
+        onSelect: (w: string, nid: string) => handleNodeSelect(w, nid),
+        onRegenerate: (nid: string, subConstraints: any) => {
+          if (regenerateRef.current) {
+            regenerateRef.current(nid, subConstraints);
+          }
+        },
+        onEditWord: (nid: string, newW: string) => handleEditWord(nid, newW),
+      },
+    }));
+
+    const reconstructedEdges: Edge[] = (data.edges || []).map((e: any) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      type: edgeType,
+      style: {
+        stroke: "#cbd5e1",
+        strokeWidth: 2,
+        strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
+      },
+      animated: isEdgeDashed,
+    }));
+
+    setNodes(reconstructedNodes);
+    setEdges(reconstructedEdges);
+    setErrorMessage(null);
+
+    const loadedFavs = Array.isArray(data.favorites) ? data.favorites : [];
+    const loadedSelected = typeof data.selectedWord === "string" ? data.selectedWord : null;
+    onLoadProject?.(data.rootWord, loadedFavs, loadedSelected);
+    return true;
+  }, [edgeType, isEdgeDashed, handleNodeSelect, handleEditWord, setNodes, setEdges, onLoadProject]);
+
+  // Load the auto-persisted last session from localStorage.
+  const handleLoadLastTree = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(LAST_TREE_STORAGE_KEY);
+      if (!raw) {
+        setErrorMessage("لا يوجد عمل محفوظ سابقاً على هذا الجهاز.");
+        return;
+      }
+      const ok = applyProjectData(JSON.parse(raw));
+      if (!ok) {
+        setErrorMessage("عذراً، تعذّر استرجاع العمل المحفوظ.");
+      }
+    } catch (err) {
+      console.error("Failed to load last tree:", err);
+      setErrorMessage("عذراً, تعذّر استرجاع العمل المحفوظ.");
+    }
+  }, [applyProjectData]);
+
   const handleSaveProject = useCallback(() => {
     try {
-      const projectPayload = {
-        version: "1.0.0",
-        rootWord,
-        selectedWord,
-        favorites,
-        nodes: nodes.map((n) => ({
-          id: n.id,
-          type: n.type,
-          position: n.position,
-          data: {
-            word: n.data.word,
-            transliteration: n.data.transliteration,
-            parentId: n.data.parentId,
-            isRoot: n.data.isRoot,
-            expanded: n.data.expanded,
-            tone: n.data.tone,
-            letter_count: n.data.letter_count,
-            selected: n.data.selected,
-          },
-        })),
-        edges: edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-        })),
-      };
+      const projectPayload = serializeProject();
 
       const jsonString = JSON.stringify(projectPayload, null, 2);
       const blob = new Blob([jsonString], { type: "application/json" });
@@ -603,7 +689,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       console.error("Failed to save project:", err);
       setErrorMessage("عذراً، فشل حفظ المشروع.");
     }
-  }, [rootWord, selectedWord, favorites, nodes, edges]);
+  }, [serializeProject, rootWord]);
 
   const handleOpenProjectClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -632,55 +718,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           return;
         }
 
-        const reconstructedNodes: Node[] = data.nodes.map((n: any) => ({
-          id: n.id,
-          type: n.type || "brandNode",
-          position: n.position,
-          data: {
-            word: n.data.word,
-            transliteration: n.data.transliteration,
-            parentId: n.data.parentId,
-            isRoot: n.data.isRoot,
-            expanded: n.data.expanded,
-            tone: n.data.tone,
-            letter_count: n.data.letter_count,
-            selected: n.data.selected,
-            onExpand: (nid: string, constraints: any) => {
-              if (handleExpandRef.current) {
-                handleExpandRef.current(nid, constraints);
-              }
-            },
-            onSelect: (w: string, nid: string) => handleNodeSelect(w, nid),
-            onRegenerate: (nid: string, subConstraints: any) => {
-              if (regenerateRef.current) {
-                regenerateRef.current(nid, subConstraints);
-              }
-            },
-            onEditWord: (nid: string, newW: string) => handleEditWord(nid, newW),
-          },
-        }));
-
-        const reconstructedEdges: Edge[] = (data.edges || []).map((e: any) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          type: edgeType,
-          style: {
-            stroke: "#cbd5e1",
-            strokeWidth: 2,
-            strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
-          },
-          animated: isEdgeDashed,
-        }));
-
-        setNodes(reconstructedNodes);
-        setEdges(reconstructedEdges);
-        setErrorMessage(null);
-
-        const loadedFavs = Array.isArray(data.favorites) ? data.favorites : [];
-        const loadedSelected = typeof data.selectedWord === "string" ? data.selectedWord : null;
-        onLoadProject?.(data.rootWord, loadedFavs, loadedSelected);
-
+        applyProjectData(data);
       } catch (err) {
         console.error("Failed to load project:", err);
         setErrorMessage("عذراً، فشل تحميل ملف المشروع. تأكد من صحة الملف.");
@@ -691,7 +729,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       }
     };
     reader.readAsText(file);
-  }, [edgeType, isEdgeDashed, handleExpand, handleNodeSelect, handleEditWord, setNodes, setEdges, onLoadProject]);
+  }, [applyProjectData]);
 
   // Initialize/Reset the tree with a new root word
   const resetTree = useCallback((word: string) => {
@@ -742,6 +780,18 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       }))
     );
   }, [favorites, setNodes]);
+
+  // Auto-persist the current session to localStorage so work survives a refresh/close.
+  // Hold on the first landing (only the initial root node exists) so a fresh start
+  // doesn't clobber a previously saved session before the user restores it.
+  React.useEffect(() => {
+    if (nodes.length <= 1) return;
+    try {
+      localStorage.setItem(LAST_TREE_STORAGE_KEY, JSON.stringify(serializeProject()));
+    } catch (err) {
+      console.error("Failed to auto-save tree:", err);
+    }
+  }, [nodes, edges, favorites, selectedWord, rootWord, serializeProject]);
 
   // Synchronize edge types and line styles dynamically for existing edges
   React.useEffect(() => {
@@ -837,6 +887,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        proOptions={{ hideAttribution: true }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStart={onNodeDragStart}
@@ -882,6 +933,14 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           </button>
         </Tooltip>
 
+        <Tooltip content="استرجاع آخر عمل محفوظ (Load Last Tree)" position="bottom">
+          <button
+            onClick={handleLoadLastTree}
+            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+          >
+            <History className="w-4 h-4 text-accent" />
+          </button>
+        </Tooltip>
 
       </div>
 

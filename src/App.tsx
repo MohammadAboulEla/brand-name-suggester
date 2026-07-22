@@ -124,6 +124,7 @@ export default function App() {
                 </ReactFlowProvider>
 
                 {/* Floating Active Seed Info Badge & Back Arrow */}
+                {!SKIP_LANDING && (
                 <div className="absolute top-4 left-4 flex items-center gap-2 z-40">
                   <div className="bg-bg-panel border-2 border-border-main rounded-xl h-10 px-3 flex items-center gap-2 shadow-sm">
                       <button
@@ -139,6 +140,7 @@ export default function App() {
                     </span>
                   </div>
                 </div>
+                )}
 
                 {/* Floating Sidebar Toggle and Settings Buttons (on the right) */}
                 <div className="absolute top-4 right-4 z-40 flex items-center gap-2">

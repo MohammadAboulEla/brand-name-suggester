@@ -61,6 +61,16 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
     }
   }, [isEditingWord]);
 
+  // If this node's auto-edit flag clears (e.g. a saved tree is restored onto the persisted
+  // root instance), leave the pending edit state and accept the incoming word.
+  useEffect(() => {
+    if (!nodeData.autoEdit) {
+      setIsEditingWord(false);
+      setRequireWord(false);
+      setEditWordValue(word);
+    }
+  }, [nodeData.autoEdit]);
+
   // Reactive synchronization for pinned tone across all active nodes in the tree
   useEffect(() => {
     const handlePinnedChange = () => {
