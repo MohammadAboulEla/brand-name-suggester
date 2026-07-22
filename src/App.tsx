@@ -76,10 +76,15 @@ export default function App() {
   };
 
   const handleSelectWord = (word: string) => {
-    setSelectedWord(word);
-    if (!favorites.includes(word)) {
-      setFavorites(prev => [...prev, word]);
+    if (!word) {
+      setSelectedWord(null);
+      return;
     }
+    // Toggle favorite: clicking the heart again unfavorites the node.
+    setFavorites(prev =>
+      prev.includes(word) ? prev.filter(w => w !== word) : [...prev, word]
+    );
+    setSelectedWord(prev => (prev === word ? null : word));
     // Do not auto open sidebar when a word is chosen, keeping user focus on the canvas
   };
 
