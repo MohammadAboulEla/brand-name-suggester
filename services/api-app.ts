@@ -1,5 +1,24 @@
 import express from "express";
-import { suggest_brand_names, transliterate_word } from "./brand-suggester.js";
+import {
+  suggest_brand_names,
+  transliterate_word,
+  transliterate_words_batch,
+  extractSynonyms,
+  extractAntonyms,
+  extractNisba,
+  extractRhymes,
+  suggestCompoundNames,
+} from "./new-brand-suggester.js";
+
+// Extraction modes handled directly via the dedicated new-brand-suggester functions
+// (kept out of suggest_brand_names, which only knows "derivatives"/"plurals").
+const WORD_LIST_EXTRACTORS: Record<string, (word: string, provider?: any) => Promise<string[]>> = {
+  synonyms: extractSynonyms,
+  antonyms: extractAntonyms,
+  nisba: extractNisba,
+  rhymes: extractRhymes,
+  compounds: suggestCompoundNames,
+};
 
 // Express app holding only the JSON API routes, shared between the local
 // long-running server (server.ts) and the Vercel serverless function (api/[...path].ts).
@@ -61,13 +80,21 @@ export function createApiApp() {
         return res.status(400).json({ success: false, error: "Seed word must start with an Arabic character" });
       }
 
-      const suggestions = await suggest_brand_names({
-        word,
-        letter_count: letter_count ? Number(letter_count) : null,
-        tone: tone || null,
-        mode: mode || null,
-        provider: provider || null,
-      });
+      const extractor = mode ? WORD_LIST_EXTRACTORS[mode] : undefined;
+      let suggestions;
+      if (extractor) {
+        const words = await extractor(word, provider || null);
+        const translitMap = await transliterate_words_batch(words, provider || null);
+        suggestions = words.map((w) => ({ word: w, transliteration: translitMap[w] ?? w.toUpperCase() }));
+      } else {
+        suggestions = await suggest_brand_names({
+          word,
+          letter_count: letter_count ? Number(letter_count) : null,
+          tone: tone || null,
+          mode: mode || null,
+          provider: provider || null,
+        });
+      }
 
       res.json({ success: true, suggestions });
     } catch (error: any) {

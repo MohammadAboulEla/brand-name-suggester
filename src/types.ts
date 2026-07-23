@@ -1,3 +1,12 @@
+export type SuggestionMode =
+  | "derivatives"
+  | "plurals"
+  | "synonyms"
+  | "antonyms"
+  | "nisba"
+  | "rhymes"
+  | "compounds";
+
 export interface BrandNodeData {
   word: string;
   transliteration?: string;
@@ -11,9 +20,9 @@ export interface BrandNodeData {
   selected?: boolean;
   isFavorite?: boolean;
   autoEdit?: boolean;
-  onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
+  onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => void;
   onSelect: (word: string, nodeId: string) => void;
-  onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => void;
+  onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => void;
   onEditWord?: (nodeId: string, newWord: string) => boolean;
 }
 

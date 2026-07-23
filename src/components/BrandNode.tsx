@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, Check } from "lucide-react";
-import { BrandNodeData, TONE_PRESETS, TonePreset } from "../types";
+import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, Check, MoreHorizontal, Repeat2, ArrowLeftRight, Tags, Music2, Link2 } from "lucide-react";
+import { BrandNodeData, SuggestionMode, TONE_PRESETS, TonePreset } from "../types";
 import { Tooltip } from "./Tooltip";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
@@ -14,6 +14,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showLetterMenu, setShowLetterMenu] = useState(false);
   const [showToneMenu, setShowToneMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Local constraints set via satellite circles before expansion
   const [letterCount, setLetterCount] = useState<number | null>(() => nodeData.letter_count ?? null);
@@ -175,6 +176,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowLetterMenu(false);
         setShowToneMenu(false);
+        setShowMoreMenu(false);
         setIsHovered(false);
       }
     }
@@ -241,12 +243,28 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const letterOptions = [null, 3, 4, 5, 6];
 
+  const moreMenuOptions: { mode: SuggestionMode; label: string; icon: React.ElementType }[] = [
+    { mode: "synonyms", label: "مرادفات", icon: Repeat2 },
+    { mode: "antonyms", label: "أضداد", icon: ArrowLeftRight },
+    { mode: "nisba", label: "اسم النسب", icon: Tags },
+    { mode: "rhymes", label: "قوافي", icon: Music2 },
+    { mode: "compounds", label: "أسماء مركبة", icon: Link2 },
+  ];
+
+  const handleMoreOptionClick = (e: React.MouseEvent, mode?: SuggestionMode) => {
+    e.stopPropagation();
+    if (onRegenerate) {
+      onRegenerate(id, { letter_count: letterCount, tone, mode: mode ?? extractionMode });
+    }
+    setShowMoreMenu(false);
+  };
+
   return (
     <div
       ref={containerRef}
       className={clsx(
         "relative p-4 select-none",
-        (isHovered || showLetterMenu || showToneMenu) && [
+        (isHovered || showLetterMenu || showToneMenu || showMoreMenu) && [
           "before:content-[''] before:absolute before:inset-[-48px] before:rounded-full before:pointer-events-auto",
           "z-50"
         ]
@@ -256,7 +274,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
       }}
       onMouseLeave={() => {
         // Only hide if menus aren't actively open
-        if (!showLetterMenu && !showToneMenu) {
+        if (!showLetterMenu && !showToneMenu && !showMoreMenu) {
           setIsHovered(false);
         }
       }}
@@ -279,7 +297,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
       {/* Satellites Orbit Group */}
       <AnimatePresence>
-        {(isHovered || showLetterMenu || showToneMenu) && !isEditingWord && (
+        {(isHovered || showLetterMenu || showToneMenu || showMoreMenu) && !isEditingWord && (
           <div className={clsx("absolute inset-0 z-[100] pointer-events-none")}>
             
             {/* Satellite 1: Letter Count (Top Left) - Uses Hash icon for number count */}
@@ -595,17 +613,22 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               </div>
             </motion.div>
  
-            {/* Satellite 4: Regenerate Children (Bottom Right) */}
+            {/* Satellite 4: More Options (Bottom Right) - hover reveals regenerate + extra extraction modes */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: 1, x: 54, y: 54 }}
               exit={{ scale: 0, x: 0, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.12 }}
-              className={clsx("absolute left-1/2 top-1/2 z-10 hover:z-50 pointer-events-auto")}
+              className={clsx(
+                "absolute left-1/2 top-1/2 pointer-events-auto",
+                showMoreMenu ? "z-50" : "z-10 hover:z-50"
+              )}
               style={{ originX: 0, originY: 0 }}
+              onMouseEnter={() => setShowMoreMenu(true)}
+              onMouseLeave={() => setShowMoreMenu(false)}
             >
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
-                <Tooltip content="إعادة توليد المعاني" position="bottom">
+                <Tooltip content="المزيد من خيارات التوليد" position="bottom">
                   <button
                     onClick={handleRegenerateClick}
                     className={clsx(
@@ -616,9 +639,62 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       "transition-all"
                     )}
                   >
-                    <RefreshCw className={clsx("w-3.5 h-3.5")} />
+                    <MoreHorizontal className={clsx("w-4 h-4")} />
                   </button>
                 </Tooltip>
+
+                {/* More Options Popover - appears below the satellite icon on hover */}
+                <AnimatePresence>
+                  {showMoreMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 22 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      className={clsx(
+                        "absolute left-1/2 z-[200] flex flex-col gap-1 p-1.5 text-right -translate-x-1/2",
+                        "w-40",
+                        "bg-bg-panel",
+                        "border-2 border-border-main rounded-xl",
+                        "shadow-lg"
+                      )}
+                    >
+                      <button
+                        onClick={(e: React.MouseEvent) => handleMoreOptionClick(e)}
+                        className={clsx(
+                          "flex items-center justify-start gap-1.5 px-2 py-1 cursor-pointer",
+                          "w-full",
+                          "text-[11px] font-medium",
+                          "rounded-lg transition-colors",
+                          "hover:bg-bg-page text-text-muted hover:text-text-main"
+                        )}
+                        dir="rtl"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                        <span>إعادة توليد</span>
+                      </button>
+
+                      <div className={clsx("my-0.5 border-t border-border-main/30")} />
+
+                      {moreMenuOptions.map(({ mode, label, icon: Icon }) => (
+                        <button
+                          key={mode}
+                          onClick={(e: React.MouseEvent) => handleMoreOptionClick(e, mode)}
+                          className={clsx(
+                            "flex items-center justify-start gap-1.5 px-2 py-1 cursor-pointer",
+                            "w-full",
+                            "text-[11px] font-medium",
+                            "rounded-lg transition-colors",
+                            "hover:bg-bg-page text-text-muted hover:text-text-main"
+                          )}
+                          dir="rtl"
+                        >
+                          <Icon className="w-3.5 h-3.5 shrink-0" />
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
  

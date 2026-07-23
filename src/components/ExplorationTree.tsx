@@ -12,7 +12,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
-import { BrandNodeData } from "../types";
+import { BrandNodeData, SuggestionMode } from "../types";
 import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
@@ -368,7 +368,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   // Primary API trigger to expand/branch from a node
   const handleExpand = useCallback(
-    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => {
+    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => {
       // Find the current node
       let targetNode: Node | undefined;
       setNodes((currentNodes) => {
@@ -565,7 +565,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
   // Trigger regeneration of a node's children by clearing descendants and running handleExpand again
   const handleRegenerate = useCallback(
-    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: "derivatives" | "plurals" | null }) => {
+    async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => {
       // 1. Get descendants of this node
       const descendants = getDescendants(nodeId, nodes);
 
