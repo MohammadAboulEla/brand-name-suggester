@@ -1,6 +1,8 @@
 {
-  "name": "Hello World",
-  "description": "A beautifully styled, minimalist Hello World screen.",
+  "name": "Brand Name Suggester",
+  "description": "An interactive, AI-powered brand name generator and visual name tree explorer.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

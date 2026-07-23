@@ -9,37 +9,49 @@ pnpm dev      # runs server.ts via tsx (vite in middleware mode, HMR enabled)
 pnpm build    # vite build (client) + esbuild bundle of server.ts -> dist/server.cjs
 pnpm start    # node dist/server.cjs (production, serves dist/ as static + SPA fallback)
 pnpm lint     # tsc --noEmit (no separate test suite or linter config in this repo)
+pnpm clean    # rm -rf dist server.js
 ```
 
 There is no test runner configured — `lint` (type-checking) is the only verification command available.
 
-Package manager is pnpm (`pnpm-lock.yaml`, `pnpm-workspace.yaml`); a `bun.lock` also exists but pnpm is the one wired into scripts.
+Package manager is pnpm (enforced by a `preinstall` `only-allow pnpm` guard).
 
 ## Architecture
 
-This is an Arabic brand-name generator: an Express server + Vite-served React SPA, backed by Gemini for word suggestion/transliteration. There is no database — everything is generated live via LLM calls (see `Readme.md` for the original product rationale: no static Arabic lexicon was available, so semantic expansion + morphological generation via LLM prompting was chosen over a lookup table).
+This is an Arabic brand-name generator: an Express server + Vite-served React SPA, backed by an LLM for word suggestion/transliteration. There is no database — everything is generated live via LLM calls (see `Readme.md` for the original product rationale: no static Arabic lexicon was available, so semantic expansion + morphological generation via LLM prompting was chosen over a lookup table).
 
-**Server (`server.ts`)** is a single Express app with two JSON API routes:
-- `POST /api/suggest` — calls `suggest_brand_names()`, validates the seed word starts with an Arabic character before hitting the model.
-- `POST /api/transliterate` — calls `transliterate_word()` for an English capital-letter phonetic rendering of an Arabic word.
+**Entry / server (`server.ts`)** is thin: it loads env, calls `createApiApp()` for the JSON routes, then either mounts Vite in middleware mode (dev, so the same process serves API + SPA with HMR) or serves the pre-built `dist/` static assets with an SPA fallback (production). Listens on port 3000.
 
-In dev, Vite runs in Express middleware mode (`server.middlewareMode`) so the same server process serves both the API and the SPA with HMR. In production it serves the pre-built `dist/` static assets with an SPA fallback.
+**API app (`services/api-app.ts`)** — `createApiApp()` builds the Express app holding only the JSON routes, and is shared between the local long-running server (`server.ts`) and the Vercel serverless entry (`api/index.ts`, wired via `vercel.json` rewrites that funnel `/api/:path*` → `/api`). Routes:
+- `POST /api/suggest` — validates the seed word starts with an Arabic character, then dispatches by `mode`: `synonyms` / `antonyms` / `nisba` / `rhymes` / `compounds` go through `WORD_LIST_EXTRACTORS` (extractor → `transliterate_words_batch`); everything else (no mode, `derivatives`, `plurals`) goes through `suggest_brand_names()`.
+- `POST /api/transliterate` — `transliterate_word()` for an English capital-letter phonetic rendering of an Arabic word.
+- `POST /api/ai-provider/test` — pings a provider's `/models` endpoint to validate a base URL + API key (used by the AI Settings modal's "test connection").
 
-**LLM layer (`services/brand-suggester.ts`)** talks directly to `@google/genai` (Gemini) using `DEFAULT_TEXT_MODEL = "gemini-3.1-flash-lite"` and `MAX_SUGGESTIONS = 5`. Three generation modes exist, selected by the `mode` param from the client:
-- default (no mode) — `suggest_brand_names()` sends one combined prompt asking for semantically-related words, morphological derivatives, and metaphorical/associated words all mixed together (deliberately, to avoid over-indexing on direct derivation).
-- `mode: "derivatives"` — `extractDerivatives()` asks specifically for morphological derivatives sharing the same root.
-- `mode: "plurals"` — `extractPlurals()` asks specifically for valid plural forms.
+**LLM layer (`services/new-brand-suggester.ts`)** is the core engine. It supports **two backends**, chosen per-request:
+- If the client forwards a `provider` object (`{ baseURL, model, apiKey?, envVar? }`) that resolves to an API key, `generateWithProvider()` runs the prompt through an **OpenAI-compatible** endpoint (`openai` SDK).
+- Otherwise it falls back to `@google/genai` (Gemini) with `DEFAULT_TEXT_MODEL = "gemini-flash-lite-latest"` and structured output (`responseSchema`).
 
-All three return `{ word, transliteration }[]`; prompts are in Arabic and request a JSON array response via `responseSchema` (structured output), with defensive JSON parsing that returns `[]` on failure rather than throwing.
+`generateJson()` is the shared "call provider or Gemini → parse JSON → retry once" flow used by every extractor; `extractJson()` strips markdown fences / stray prose before parsing. `MAX_SUGGESTIONS = 5` caps every list. Generation functions (all take an optional `ProviderRequest`):
+- `suggest_brand_names()` — default combined prompt (semantic + morphological + metaphorical, mixed deliberately); also handles `mode: "derivatives"` / `"plurals"` internally.
+- `extractDerivatives`, `extractPlurals`, `extractSynonyms`, `extractAntonyms`, `extractNisba`, `extractRhymes`, `suggestCompoundNames`, `extractRoot` — targeted single-purpose extractors returning `string[]`.
+- `transliterate_word` / `transliterate_words_batch` — Latin capital-letter phonetics.
+- `crossLingualEcho`, `extractDefinition` — **exported but not currently routed** in `api-app.ts`; treat as available-but-inactive infrastructure.
 
-**`services/ai-provider/`** is a generic multi-provider (OpenAI-compatible) client/registry abstraction (presets for OpenAI, Anthropic, Gemini, Mistral, Groq, etc., a `ProviderRegistry` for resolving API keys from env vars, a shared `createClient()`). It is currently **not wired into `brand-suggester.ts`** (which calls `@google/genai` directly) — treat it as available infrastructure for a future provider-swap, not as the active code path.
+`isValidArabicWord()` guards against empty/diacritics-only/overlong input and prompt injection via `ARABIC_WORD_RE = /^[؀-ۿ\s'\-]{1,50}$/`. Note this is a *stricter* validator than the `/^[؀-ۿ]/` "starts-with-Arabic" check used in the API routes and client — both regexes exist in the codebase.
 
-**Client (`src/`)** is a single-page app (no router) built around `@xyflow/react` (React Flow) to render the suggestion tree:
-- `App.tsx` — top-level UI shell: onboarding seed-entry screen vs. the workspace view, theme switching, favorites sidebar, settings sidebar (edge shape/style, "Smoke Run" fake-data mode for offline testing without hitting the API), back-confirmation dialog. Holds most cross-cutting state (`rootWord`, `favorites`, `selectedWord`, theme, edge style) and passes it down.
-- `components/ExplorationTree.tsx` — owns the React Flow `nodes`/`edges` state and all tree mutation logic: expanding a node (calls `/api/suggest`, computes fanned-out child positions with `resolveOverlaps` to avoid overlapping nodes), regenerating a node's children, deleting a node + its descendants, dragging a node along with its descendants, save/load project to/from a local JSON file, and an `isFakeMode` path that returns shuffled `MOCK_TEST_WORDS` instead of calling the API (for fast UI iteration). Node callbacks (`onExpand`, `onRegenerate`, etc.) are threaded through `handleExpandRef`/`regenerateRef` refs so node `data` closures stay stable across re-expansions.
-- `components/BrandNode.tsx` — the custom React Flow node: displays the Arabic word + transliteration, and exposes per-node "satellite" controls on hover (letter-count filter, tone filter/pin, favorite, regenerate, inline word edit, derivatives/plurals mode toggle). Tone can be "pinned" via `localStorage` (`pinned_brand_tone_active`/`pinned_brand_tone`) so it propagates to all nodes across the tree via a custom `brand_tone_pinned_changed` window event.
-- `types.ts` — shared `BrandNodeData` shape and the `TONE_PRESETS` list (tech/elegant/poetic/playful/corporate) used by the tone-selector UI.
+**`services/ai-provider/`** (`client.ts`, `presets.ts`, `registry.ts`, `types.ts`) is a separate generic multi-provider abstraction (presets, a registry resolving keys from env vars, a shared `createClient()`). The **active** provider-swap path is the `ProviderRequest` + `generateWithProvider()` flow inside `new-brand-suggester.ts` driven by the AI Settings modal — this `ai-provider/` directory is parallel infrastructure, not the wired path.
 
-Arabic-script validation (`/^[؀-ۿ]/`) is duplicated in several places (client onboarding form, server routes, `handleEditWord`, project-load validation) — any change to seed-word validation rules needs to be applied consistently across all of them.
+**Client (`src/`)** is a single-page app (no router) built around `@xyflow/react` (React Flow), with `motion` for animations and `lucide-react` icons:
+- `App.tsx` — top-level UI shell and cross-cutting state (`rootWord`, `favorites`, `selectedWord`, theme, `edgeType`/`isEdgeDashed`, `isCompactMoreMenu`, `isFakeMode`). Conditional render: `<LandingPage />` when `rootWord == null`, otherwise the `<ExplorationTree />` workspace with favorites sidebar, settings sidebar ("Smoke Run" fake-data mode, edge shape/style), AI Settings modal, and back-confirmation dialog.
+- `components/LandingPage.tsx` — onboarding seed-entry screen.
+- `components/ExplorationTree.tsx` — owns React Flow `nodes`/`edges` and all tree mutation: expanding (calls `/api/suggest`, fans out children via `resolveOverlaps` radial spacing), regenerating, deleting a node + descendants, dragging a node with its descendants, **save/load project to/from a local JSON file** (`<rootWord>-project.json`), and an `isFakeMode` path returning shuffled `MOCK_TEST_WORDS` instead of hitting the API. Auto-persists the tree to `localStorage` under `brand_tree_last_session`. Node callbacks are threaded through refs so node `data` closures stay stable across re-expansions.
+- `components/BrandNode.tsx` — the custom React Flow node: Arabic word + transliteration, plus on-hover "satellite" controls (letter-count filter, tone filter/pin, favorite, regenerate, inline word edit) and a "..." More menu exposing the extra suggestion modes (synonyms/antonyms/nisba/rhymes/compounds/derivatives/plurals). Tone can be "pinned" via `localStorage` (`pinned_brand_tone_active` / `pinned_brand_tone`) and propagates across the tree via a custom `brand_tone_pinned_changed` window event. Transliteration is fetched lazily from `/api/transliterate`.
+- `components/AISettingsModal.tsx` — configures the OpenAI-compatible provider (base URL, model, API key / env var); persists to `localStorage` under `ai_provider_settings`. The stored provider is forwarded on every `/api/suggest` and `/api/transliterate` call.
+- `components/Tooltip.tsx` — hover tooltip helper.
+- `types.ts` — shared `BrandNodeData`, the `SuggestionMode` union (`derivatives | plurals | synonyms | antonyms | nisba | rhymes | compounds`), and the `TONE_PRESETS` list (tech/elegant/poetic/playful/corporate).
 
-Styling is Tailwind v4 via the `@tailwindcss/vite` plugin; theme colors (`theme-amber`, `theme-slate`, etc.) are applied as a class on the root div and presumably defined in `src/index.css`.
+**Deployment** — dual target: the local Express server (`server.ts`) and Vercel serverless (`api/index.ts` + `vercel.json`), both sharing `createApiApp()`.
+
+Arabic-script validation is duplicated across client onboarding, server routes, `handleEditWord`, and project-load validation — any change to seed-word rules must be applied consistently (and note the two distinct regexes above).
+
+Styling is Tailwind v4 via the `@tailwindcss/vite` plugin; theme colors (`theme-amber`, `theme-slate`, etc.) are applied as a class on the root div and defined in `src/index.css`.
