@@ -221,17 +221,44 @@ export async function transliterate_words_batch(words: string[], provider?: Prov
 
 الكلمات: ${JSON.stringify(words)}
 
-المخرجات يجب أن تكون JSON Object حيث كل مفتاح هو الكلمة العربية وقيمته هي النطق، كما في المثال:
-{"شمس": "SHAMS", "روضة": "RAWDAH"}`;
+المخرجات يجب أن تكون JSON Array من كائنات، لكل كائن الحقلان "word" (الكلمة العربية) و "transliteration" (النطق بحروف كابيتال)، كما في المثال:
+[{"word": "شمس", "transliteration": "SHAMS"}, {"word": "روضة", "transliteration": "RAWDAH"}]`;
 
-  const parsed = await generateJson<Record<string, string>>(prompt, provider, {
-    type: Type.OBJECT,
-    description: "Map of Arabic word to its ALL CAPS English transliteration.",
+  // A map keyed by the Arabic words can't be expressed as a Gemini responseSchema — an OBJECT
+  // schema requires statically declared `properties`, so a keys-unknown-ahead-of-time map came
+  // back unusable and every word silently fell through to the `w.toUpperCase()` no-op below.
+  // Ask for an array of pairs (a shape structured output handles) and rebuild the map here.
+  const parsed = await generateJson<any>(prompt, provider, {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        word: { type: Type.STRING },
+        transliteration: { type: Type.STRING },
+      },
+      required: ["word", "transliteration"],
+    },
+    description: "Arabic words paired with their ALL CAPS English transliterations.",
   }, 0.2, "batch transliteration");
+
+  // Accept either the requested array of pairs or a plain {word: transliteration} map, since
+  // OpenAI-compatible providers (which ignore the schema entirely) often return the latter.
+  const rawMap: Record<string, string> = {};
+  const pairs = extractArray(parsed);
+  if (pairs) {
+    for (const item of pairs) {
+      const w = String(item?.word ?? "").trim();
+      if (w) rawMap[w] = String(item?.transliteration ?? "");
+    }
+  } else if (parsed && typeof parsed === "object") {
+    for (const [w, translit] of Object.entries(parsed)) {
+      rawMap[w.trim()] = String(translit);
+    }
+  }
 
   const result: Record<string, string> = {};
   for (const w of words) {
-    const raw = parsed?.[w];
+    const raw = rawMap[w.trim()];
     result[w] = raw ? sanitizeTransliteration(raw, w) : w.toUpperCase();
   }
   return result;

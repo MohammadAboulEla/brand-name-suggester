@@ -42,6 +42,26 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const moreMenuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Small close delay so a tiny cursor gap while moving from the "..." button down into the
+  // popover (a hover-open menu) doesn't drop the hover state mid-transit and swallow the click.
+  const openMoreMenu = () => {
+    if (moreMenuCloseTimer.current) {
+      clearTimeout(moreMenuCloseTimer.current);
+      moreMenuCloseTimer.current = null;
+    }
+    setShowMoreMenu(true);
+  };
+  const scheduleCloseMoreMenu = () => {
+    moreMenuCloseTimer.current = setTimeout(() => setShowMoreMenu(false), 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (moreMenuCloseTimer.current) clearTimeout(moreMenuCloseTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     // Don't clobber the field while the user is actively editing (also protects the
@@ -253,6 +273,10 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const handleMoreOptionClick = (e: React.MouseEvent, mode?: SuggestionMode) => {
     e.stopPropagation();
+    if (moreMenuCloseTimer.current) {
+      clearTimeout(moreMenuCloseTimer.current);
+      moreMenuCloseTimer.current = null;
+    }
     if (onRegenerate) {
       onRegenerate(id, { letter_count: letterCount, tone, mode: mode ?? null });
     }
@@ -637,8 +661,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                 showMoreMenu ? "z-50" : "z-10 hover:z-50"
               )}
               style={{ originX: 0, originY: 0 }}
-              onMouseEnter={() => setShowMoreMenu(true)}
-              onMouseLeave={() => setShowMoreMenu(false)}
+              onMouseEnter={openMoreMenu}
+              onMouseLeave={scheduleCloseMoreMenu}
             >
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
                 <Tooltip content="المزيد من خيارات التوليد" position="bottom">
@@ -662,10 +686,13 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                     isCompactMoreMenu ? (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                        animate={{ opacity: 1, scale: 1, y: 22 }}
+                        animate={{ opacity: 1, scale: 1, y: 16 }}
                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
                         className={clsx(
-                          "absolute left-1/2 z-[200] flex flex-wrap items-center justify-center gap-1 p-1.5 -translate-x-1/2",
+                          // pt (instead of the y-offset alone) keeps the hover region gap-free
+                          // between the trigger button and the popover, since this is a hover-open
+                          // menu: any dead space in between would fire mouseleave mid-transit.
+                          "absolute left-1/2 z-[200] flex flex-wrap items-center justify-center gap-1 px-1.5 pt-3 pb-1.5 -translate-x-1/2",
                           "w-32",
                           "bg-bg-panel",
                           "border-2 border-border-main rounded-xl",
@@ -691,10 +718,13 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                     ) : (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                        animate={{ opacity: 1, scale: 1, y: 22 }}
+                        animate={{ opacity: 1, scale: 1, y: 16 }}
                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
                         className={clsx(
-                          "absolute left-1/2 z-[200] flex flex-col gap-1 p-1.5 text-right -translate-x-1/2",
+                          // pt (instead of the y-offset alone) keeps the hover region gap-free
+                          // between the trigger button and the popover, since this is a hover-open
+                          // menu: any dead space in between would fire mouseleave mid-transit.
+                          "absolute left-1/2 z-[200] flex flex-col gap-1 px-1.5 pt-3 pb-1.5 text-right -translate-x-1/2",
                           "w-40",
                           "bg-bg-panel",
                           "border-2 border-border-main rounded-xl",
