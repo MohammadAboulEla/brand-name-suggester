@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, Check, MoreHorizontal, Repeat2, ArrowLeftRight, Tags, Music2, Link2 } from "lucide-react";
+import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, MoreHorizontal, Repeat2, ArrowLeftRight, Tags, Music2, Link2 } from "lucide-react";
 import { BrandNodeData, SuggestionMode, TONE_PRESETS, TonePreset } from "../types";
 import { Tooltip } from "./Tooltip";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -28,7 +28,6 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const [isTonePinned, setIsTonePinned] = useState<boolean>(() => {
     return localStorage.getItem("pinned_brand_tone_active") === "true";
   });
-  const [extractionMode, setExtractionMode] = useState<"derivatives" | "plurals" | null>(null);
 
   const [localTransliteration, setLocalTransliteration] = useState<string>("");
   
@@ -191,7 +190,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const handleMainClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (loading || expanded || isEditingWord) return;
-    onExpand(id, { letter_count: letterCount, tone, mode: extractionMode });
+    onExpand(id, { letter_count: letterCount, tone, mode: null });
   };
 
   const handleSelectClick = (e: React.MouseEvent) => {
@@ -202,7 +201,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const handleRegenerateClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRegenerate) {
-      onRegenerate(id, { letter_count: letterCount, tone, mode: extractionMode });
+      onRegenerate(id, { letter_count: letterCount, tone, mode: null });
     }
   };
 
@@ -255,9 +254,22 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const handleMoreOptionClick = (e: React.MouseEvent, mode?: SuggestionMode) => {
     e.stopPropagation();
     if (onRegenerate) {
-      onRegenerate(id, { letter_count: letterCount, tone, mode: mode ?? extractionMode });
+      onRegenerate(id, { letter_count: letterCount, tone, mode: mode ?? null });
     }
     setShowMoreMenu(false);
+  };
+
+  // Derivatives/plurals satellites generate immediately on click rather than acting as a
+  // sticky toggle: expand if the node has no children yet, otherwise regenerate them.
+  const handleQuickGenerate = (e: React.MouseEvent, mode: SuggestionMode) => {
+    e.stopPropagation();
+    if (loading) return;
+    const constraints = { letter_count: letterCount, tone, mode };
+    if (expanded) {
+      onRegenerate?.(id, constraints);
+    } else {
+      onExpand(id, constraints);
+    }
   };
 
   return (
@@ -757,7 +769,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               </div>
             </motion.div>
  
-            {/* Satellite 6: Derivatives (Left Checkbox) */}
+            {/* Satellite 6: Derivatives (Left) - generates immediately on click */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: 1, x: -74, y: 0 }}
@@ -769,30 +781,22 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
                 <Tooltip content="توليد المشتقات الصرفية" position="left">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExtractionMode(extractionMode === "derivatives" ? null : "derivatives");
-                    }}
+                    onClick={(e) => handleQuickGenerate(e, "derivatives")}
                     className={clsx(
                       "flex items-center justify-center cursor-pointer",
                       "w-8 h-8",
-                      "border rounded-full transition-all",
-                      extractionMode === "derivatives"
-                        ? "bg-accent text-white font-bold border-secondary scale-110 shadow-md"
-                        : "bg-bg-panel text-accent hover:bg-accent-bg border-border-main hover:border-accent"
+                      "bg-bg-panel text-accent hover:bg-accent-bg hover:text-accent-hover",
+                      "border border-border-main hover:border-accent rounded-full",
+                      "transition-all"
                     )}
                   >
-                    {extractionMode === "derivatives" ? (
-                      <Check className={clsx("w-4 h-4 stroke-[3px]")} />
-                    ) : (
-                      <GitFork className="w-4 h-4" />
-                    )}
+                    <GitFork className="w-4 h-4" />
                   </button>
                 </Tooltip>
               </div>
             </motion.div>
- 
-            {/* Satellite 7: Plurals (Right Checkbox) */}
+
+            {/* Satellite 7: Plurals (Right) - generates immediately on click */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: 1, x: 74, y: 0 }}
@@ -804,24 +808,16 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
                 <Tooltip content="توليد جموع الكلمة" position="right">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExtractionMode(extractionMode === "plurals" ? null : "plurals");
-                    }}
+                    onClick={(e) => handleQuickGenerate(e, "plurals")}
                     className={clsx(
                       "flex items-center justify-center cursor-pointer",
                       "w-8 h-8",
-                      "border rounded-full transition-all",
-                      extractionMode === "plurals"
-                        ? "bg-accent text-white font-bold border-secondary scale-110 shadow-md"
-                        : "bg-bg-panel text-accent hover:bg-accent-bg border-border-main hover:border-accent"
+                      "bg-bg-panel text-accent hover:bg-accent-bg hover:text-accent-hover",
+                      "border border-border-main hover:border-accent rounded-full",
+                      "transition-all"
                     )}
                   >
-                    {extractionMode === "plurals" ? (
-                      <Check className={clsx("w-4 h-4 stroke-[3px]")} />
-                    ) : (
-                      <Layers className="w-4 h-4" />
-                    )}
+                    <Layers className="w-4 h-4" />
                   </button>
                 </Tooltip>
               </div>
@@ -964,7 +960,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           )}
 
           {/* Small badge showing active filters if they exist and are NOT expanded yet */}
-          {!expanded && !loading && (letterCount || tone || extractionMode) && (
+          {!expanded && !loading && (letterCount || tone) && (
             <div
               className={clsx(
                 "absolute -bottom-1 left-1/2 flex items-center gap-0.5 px-1.5 py-0.5 whitespace-nowrap -translate-x-1/2",
@@ -973,11 +969,8 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               )}
             >
               {letterCount && <span>{letterCount}ح</span>}
-              {letterCount && (tone || extractionMode) && <span className={clsx("opacity-50")}>|</span>}
+              {letterCount && tone && <span className={clsx("opacity-50")}>|</span>}
               {tone && <span>{currentTonePreset ? "✨" : tone.length > 5 ? tone.substring(0, 4) + ".." : tone}</span>}
-              {tone && extractionMode && <span className={clsx("opacity-50")}>|</span>}
-              {extractionMode === "derivatives" && <span>مشتقات</span>}
-              {extractionMode === "plurals" && <span>جموع</span>}
             </div>
           )}
         </button>
