@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, MoreHorizontal, Repeat2, ArrowLeftRight, Tags, Music2, Link2 } from "lucide-react";
+import { Sparkles, Calendar, Heart, ChevronDown, RefreshCw, Type, Hash, GitFork, Layers, MoreHorizontal, Repeat2, ArrowLeftRight, Tags, Music2 } from "lucide-react";
+// Link2 kept out of imports while "أسماء مركبة" (compounds) is disabled; re-add when re-enabling
 import { BrandNodeData, SuggestionMode, TONE_PRESETS, TonePreset } from "../types";
 import { Tooltip } from "./Tooltip";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
@@ -264,10 +265,10 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const moreMenuOptions: { mode?: SuggestionMode; label: string; icon: React.ElementType }[] = [
     { mode: "synonyms", label: "مرادفات", icon: Repeat2 },
-    { mode: "antonyms", label: "أضداد", icon: ArrowLeftRight },
     { mode: "nisba", label: "اسم النسب", icon: Tags },
-    { mode: "rhymes", label: "قوافي", icon: Music2 },
-    { mode: "compounds", label: "أسماء مركبة", icon: Link2 },
+    // { mode: "compounds", label: "أسماء مركبة", icon: Link2 }, // TODO: temporarily disabled, may re-enable later
+    { mode: "derivatives", label: "توليد المشتقات", icon: GitFork },
+    { mode: "plurals", label: "توليد الجموع", icon: Layers },
   ];
   const regenerateOption = { mode: undefined as SuggestionMode | undefined, label: "إعادة توليد", icon: RefreshCw };
 
@@ -799,7 +800,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               </div>
             </motion.div>
  
-            {/* Satellite 6: Derivatives (Left) - generates immediately on click */}
+            {/* Satellite 6: Antonyms (Left) - generates immediately on click */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: 1, x: -74, y: 0 }}
@@ -809,9 +810,9 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               style={{ originX: 0, originY: 0 }}
             >
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
-                <Tooltip content="توليد المشتقات الصرفية" position="left">
+                <Tooltip content="أضاد" position="left">
                   <button
-                    onClick={(e) => handleQuickGenerate(e, "derivatives")}
+                    onClick={(e) => handleQuickGenerate(e, "antonyms")}
                     className={clsx(
                       "flex items-center justify-center cursor-pointer",
                       "w-8 h-8",
@@ -820,13 +821,13 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       "transition-all"
                     )}
                   >
-                    <GitFork className="w-4 h-4" />
+                    <ArrowLeftRight className="w-4 h-4" />
                   </button>
                 </Tooltip>
               </div>
             </motion.div>
 
-            {/* Satellite 7: Plurals (Right) - generates immediately on click */}
+            {/* Satellite 7: Rhymes (Right) - generates immediately on click */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}
               animate={{ scale: 1, x: 74, y: 0 }}
@@ -836,9 +837,9 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
               style={{ originX: 0, originY: 0 }}
             >
               <div className={clsx("relative -translate-x-1/2 -translate-y-1/2")}>
-                <Tooltip content="توليد جموع الكلمة" position="right">
+                <Tooltip content="القوافي" position="right">
                   <button
-                    onClick={(e) => handleQuickGenerate(e, "plurals")}
+                    onClick={(e) => handleQuickGenerate(e, "rhymes")}
                     className={clsx(
                       "flex items-center justify-center cursor-pointer",
                       "w-8 h-8",
@@ -847,7 +848,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                       "transition-all"
                     )}
                   >
-                    <Layers className="w-4 h-4" />
+                    <Music2 className="w-4 h-4" />
                   </button>
                 </Tooltip>
               </div>
