@@ -9,7 +9,7 @@ import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
 export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
   const nodeData = data as unknown as BrandNodeData;
-  const { word, loading, expanded, isRoot, isFavorite, onExpand, onSelect, onRegenerate, onEditWord } = nodeData;
+  const { word, loading, expanded, isRoot, isFavorite, onExpand, onSelect, onRegenerate, onEditWord, isCompactMoreMenu } = nodeData;
 
   const [isHovered, setIsHovered] = useState(false);
   const [showLetterMenu, setShowLetterMenu] = useState(false);
@@ -243,13 +243,14 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
 
   const letterOptions = [null, 3, 4, 5, 6];
 
-  const moreMenuOptions: { mode: SuggestionMode; label: string; icon: React.ElementType }[] = [
+  const moreMenuOptions: { mode?: SuggestionMode; label: string; icon: React.ElementType }[] = [
     { mode: "synonyms", label: "مرادفات", icon: Repeat2 },
     { mode: "antonyms", label: "أضداد", icon: ArrowLeftRight },
     { mode: "nisba", label: "اسم النسب", icon: Tags },
     { mode: "rhymes", label: "قوافي", icon: Music2 },
     { mode: "compounds", label: "أسماء مركبة", icon: Link2 },
   ];
+  const regenerateOption = { mode: undefined as SuggestionMode | undefined, label: "إعادة توليد", icon: RefreshCw };
 
   const handleMoreOptionClick = (e: React.MouseEvent, mode?: SuggestionMode) => {
     e.stopPropagation();
@@ -646,39 +647,50 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                 {/* More Options Popover - appears below the satellite icon on hover */}
                 <AnimatePresence>
                   {showMoreMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                      animate={{ opacity: 1, scale: 1, y: 22 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                      className={clsx(
-                        "absolute left-1/2 z-[200] flex flex-col gap-1 p-1.5 text-right -translate-x-1/2",
-                        "w-40",
-                        "bg-bg-panel",
-                        "border-2 border-border-main rounded-xl",
-                        "shadow-lg"
-                      )}
-                    >
-                      <button
-                        onClick={(e: React.MouseEvent) => handleMoreOptionClick(e)}
+                    isCompactMoreMenu ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                        animate={{ opacity: 1, scale: 1, y: 22 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
                         className={clsx(
-                          "flex items-center justify-start gap-1.5 px-2 py-1 cursor-pointer",
-                          "w-full",
-                          "text-[11px] font-medium",
-                          "rounded-lg transition-colors",
-                          "hover:bg-bg-page text-text-muted hover:text-text-main"
+                          "absolute left-1/2 z-[200] flex flex-wrap items-center justify-center gap-1 p-1.5 -translate-x-1/2",
+                          "w-32",
+                          "bg-bg-panel",
+                          "border-2 border-border-main rounded-xl",
+                          "shadow-lg"
                         )}
-                        dir="rtl"
                       >
-                        <RefreshCw className="w-3.5 h-3.5 shrink-0" />
-                        <span>إعادة توليد</span>
-                      </button>
-
-                      <div className={clsx("my-0.5 border-t border-border-main/30")} />
-
-                      {moreMenuOptions.map(({ mode, label, icon: Icon }) => (
+                        {[regenerateOption, ...moreMenuOptions].map(({ mode, label, icon: Icon }) => (
+                          <Tooltip key={mode ?? "regenerate"} content={label} position="bottom">
+                            <button
+                              onClick={(e: React.MouseEvent) => handleMoreOptionClick(e, mode)}
+                              className={clsx(
+                                "flex items-center justify-center cursor-pointer",
+                                "w-7 h-7",
+                                "rounded-lg transition-colors",
+                                "hover:bg-bg-page text-text-muted hover:text-text-main"
+                              )}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                            </button>
+                          </Tooltip>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                        animate={{ opacity: 1, scale: 1, y: 22 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                        className={clsx(
+                          "absolute left-1/2 z-[200] flex flex-col gap-1 p-1.5 text-right -translate-x-1/2",
+                          "w-40",
+                          "bg-bg-panel",
+                          "border-2 border-border-main rounded-xl",
+                          "shadow-lg"
+                        )}
+                      >
                         <button
-                          key={mode}
-                          onClick={(e: React.MouseEvent) => handleMoreOptionClick(e, mode)}
+                          onClick={(e: React.MouseEvent) => handleMoreOptionClick(e)}
                           className={clsx(
                             "flex items-center justify-start gap-1.5 px-2 py-1 cursor-pointer",
                             "w-full",
@@ -688,16 +700,36 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
                           )}
                           dir="rtl"
                         >
-                          <Icon className="w-3.5 h-3.5 shrink-0" />
-                          <span>{label}</span>
+                          <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                          <span>إعادة توليد</span>
                         </button>
-                      ))}
-                    </motion.div>
+
+                        <div className={clsx("my-0.5 border-t border-border-main/30")} />
+
+                        {moreMenuOptions.map(({ mode, label, icon: Icon }) => (
+                          <button
+                            key={mode}
+                            onClick={(e: React.MouseEvent) => handleMoreOptionClick(e, mode)}
+                            className={clsx(
+                              "flex items-center justify-start gap-1.5 px-2 py-1 cursor-pointer",
+                              "w-full",
+                              "text-[11px] font-medium",
+                              "rounded-lg transition-colors",
+                              "hover:bg-bg-page text-text-muted hover:text-text-main"
+                            )}
+                            dir="rtl"
+                          >
+                            <Icon className="w-3.5 h-3.5 shrink-0" />
+                            <span>{label}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )
                   )}
                 </AnimatePresence>
               </div>
             </motion.div>
- 
+
             {/* Satellite 5: Word Edit (Top Center) - Uses T icon for editing the word */}
             <motion.div
               initial={{ scale: 0, x: 0, y: 0 }}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
 import clsx from "clsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
@@ -68,6 +68,7 @@ export default function App() {
   const [isThemePickerExpanded, setIsThemePickerExpanded] = useState(false);
   const [edgeType, setEdgeType] = useState<string>("default"); // "smoothstep", "default", "straight", "step"
   const [isEdgeDashed, setIsEdgeDashed] = useState<boolean>(true);
+  const [isCompactMoreMenu, setIsCompactMoreMenu] = useState<boolean>(false);
 
   const themes = [
     { id: "amber", name: "دافئ عسلي (Amber)", dotClass: "bg-[#D97706]" },
@@ -182,6 +183,7 @@ export default function App() {
                     }}
                     edgeType={edgeType}
                     isEdgeDashed={isEdgeDashed}
+                    isCompactMoreMenu={isCompactMoreMenu}
                     isFakeMode={isFakeMode}
                     autoEditRoot={SKIP_LANDING}
                     onReset={() => setShowBackConfirm(true)}
@@ -753,6 +755,31 @@ export default function App() {
                               />
                             </button>
                           </div>
+                        </div>
+
+                        <hr className={clsx("border-border-main/60")} />
+
+                        {/* More Options Menu Style Section */}
+                        <div>
+                          <label
+                            htmlFor="compact-more-menu-checkbox"
+                            className={clsx(
+                              "flex items-center gap-2.5 px-3 py-3 cursor-pointer select-none",
+                              "bg-bg-page/40 border-2 border-border-main hover:border-accent/40 rounded-2xl",
+                              "transition-colors"
+                            )}
+                          >
+                            <input
+                              id="compact-more-menu-checkbox"
+                              type="checkbox"
+                              checked={isCompactMoreMenu}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => setIsCompactMoreMenu(e.target.checked)}
+                              className="w-4 h-4 rounded border-border-main text-accent focus:ring-accent accent-accent cursor-pointer shrink-0"
+                            />
+                            <span className={clsx("text-text-main font-display font-bold text-sm")}>
+                              قائمة "المزيد" مضغوطة (أيقونات فقط)
+                            </span>
+                          </label>
                         </div>
                       </div>
 

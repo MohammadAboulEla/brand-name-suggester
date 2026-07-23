@@ -165,6 +165,7 @@ interface ExplorationTreeProps {
   onLoadProject?: (rootWord: string, favorites: string[], selectedWord: string | null) => void;
   edgeType?: string;
   isEdgeDashed?: boolean;
+  isCompactMoreMenu?: boolean;
   isFakeMode?: boolean;
   autoEditRoot?: boolean;
   onReset?: () => void;
@@ -178,6 +179,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   onLoadProject,
   edgeType = "default",
   isEdgeDashed = true,
+  isCompactMoreMenu = false,
   isFakeMode = false,
   autoEditRoot = false,
   onReset,
@@ -492,6 +494,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
                 expanded: false,
                 tone: constraints.tone,
                 letter_count: constraints.letter_count,
+                isCompactMoreMenu,
                 onExpand: (nid, subConstraints) => {
                   if (handleExpandRef.current) {
                     handleExpandRef.current(nid, subConstraints);
@@ -560,7 +563,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         );
       }
     },
-    [nodes, setNodes, setEdges, handleNodeSelect, edgeType, isEdgeDashed]
+    [nodes, setNodes, setEdges, handleNodeSelect, edgeType, isEdgeDashed, isCompactMoreMenu]
   );
 
   // Trigger regeneration of a node's children by clearing descendants and running handleExpand again
@@ -687,6 +690,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         tone: n.data.tone,
         letter_count: n.data.letter_count,
         selected: n.data.selected,
+        isCompactMoreMenu,
         onExpand: (nid: string, constraints: any) => {
           if (handleExpandRef.current) {
             handleExpandRef.current(nid, constraints);
@@ -723,7 +727,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     const loadedSelected = typeof data.selectedWord === "string" ? data.selectedWord : null;
     onLoadProject?.(data.rootWord, loadedFavs, loadedSelected);
     return true;
-  }, [edgeType, isEdgeDashed, handleNodeSelect, handleEditWord, setNodes, setEdges, onLoadProject]);
+  }, [edgeType, isEdgeDashed, isCompactMoreMenu, handleNodeSelect, handleEditWord, setNodes, setEdges, onLoadProject]);
 
   // Load the auto-persisted last session from localStorage.
   const handleLoadLastTree = useCallback(() => {
@@ -949,6 +953,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         loading: false,
         expanded: false,
         autoEdit: autoEditRoot,
+        isCompactMoreMenu,
         onExpand: (nodeId, constraints) => {
           if (handleExpandRef.current) {
             handleExpandRef.current(nodeId, constraints);
@@ -967,7 +972,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     setNodes([initialNode]);
     setEdges([]);
     setErrorMessage(null);
-  }, [setNodes, setEdges, handleExpand, handleNodeSelect, autoEditRoot]);
+  }, [setNodes, setEdges, handleExpand, handleNodeSelect, autoEditRoot, isCompactMoreMenu]);
 
   // Auto-initialize tree if not already initialized
   React.useEffect(() => {
@@ -985,6 +990,16 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       }))
     );
   }, [favorites, setNodes]);
+
+  // Keep each node's "more menu" compact-mode setting in sync with the settings sidebar toggle
+  React.useEffect(() => {
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => ({
+        ...n,
+        data: { ...n.data, isCompactMoreMenu },
+      }))
+    );
+  }, [isCompactMoreMenu, setNodes]);
 
   // Auto-persist the current session to localStorage so work survives a refresh/close.
   // Hold on the first landing (only the initial root node exists) so a fresh start

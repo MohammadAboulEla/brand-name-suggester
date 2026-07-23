@@ -20,6 +20,7 @@ export interface BrandNodeData {
   selected?: boolean;
   isFavorite?: boolean;
   autoEdit?: boolean;
+  isCompactMoreMenu?: boolean;
   onExpand: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => void;
   onSelect: (word: string, nodeId: string) => void;
   onRegenerate?: (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => void;
