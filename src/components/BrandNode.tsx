@@ -179,6 +179,7 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
         if (json.success && isMounted) {
           setLocalTransliteration(json.transliteration);
         }
+        // TODO: surface json.kind (e.g. "auth") instead of silently keeping the old value.
       } catch (e) {
         console.error("Failed to fetch transliteration:", e);
       }

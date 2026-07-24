@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { X, Bot, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { PROVIDER_PRESETS } from "../../services/ai-provider/presets";
+import { messageFor } from "../errorMessages";
 
 const STORAGE_KEY = "ai_provider_settings";
 
@@ -104,11 +105,11 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
         setTestMessage("تم الاتصال بنجاح");
       } else {
         setTestState("error");
-        setTestMessage(data.error || "فشل الاتصال");
+        setTestMessage(data.kind ? messageFor(data.kind) : data.error || "فشل الاتصال");
       }
-    } catch (e: any) {
+    } catch {
       setTestState("error");
-      setTestMessage(e.message || "فشل الاتصال");
+      setTestMessage(messageFor("network"));
     }
   };
 

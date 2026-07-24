@@ -8,7 +8,26 @@ import {
   extractNisba,
   extractRhymes,
   suggestCompoundNames,
+  LLMError,
+  type LLMErrorKind,
 } from "./new-brand-suggester.js";
+
+// Maps a typed engine failure to an HTTP status + a machine-readable `kind` the
+// client renders as an Arabic message. Non-LLMError throws stay generic 500s.
+const KIND_STATUS: Record<LLMErrorKind, number> = {
+  auth: 401,
+  rate_limit: 429,
+  network: 502,
+  parse: 502,
+  unknown: 500,
+};
+
+function sendError(res: import("express").Response, error: any, fallback: string) {
+  if (error instanceof LLMError) {
+    return res.status(KIND_STATUS[error.kind]).json({ success: false, kind: error.kind, error: error.message || fallback });
+  }
+  return res.status(500).json({ success: false, kind: "unknown", error: error?.message || fallback });
+}
 
 // Extraction modes handled directly via the dedicated new-brand-suggester functions
 // (kept out of suggest_brand_names, which only knows "derivatives"/"plurals").
@@ -30,17 +49,17 @@ export function createApiApp() {
     try {
       const { word, provider } = req.body;
       if (!word) {
-        return res.status(400).json({ success: false, error: "Word is required" });
+        return res.status(400).json({ success: false, kind: "validation", error: "Word is required" });
       }
       const isArabic = /^[؀-ۿ]/.test(word.trim());
       if (!isArabic) {
-        return res.status(400).json({ success: false, error: "Word must start with an Arabic character" });
+        return res.status(400).json({ success: false, kind: "validation", error: "Word must start with an Arabic character" });
       }
       const transliteration = await transliterate_word(word, provider);
       res.json({ success: true, transliteration });
     } catch (error: any) {
       console.error("API transliterate error:", error);
-      res.status(500).json({ success: false, error: error.message || "Failed to transliterate word" });
+      sendError(res, error, "Failed to transliterate word");
     }
   });
 
@@ -52,7 +71,7 @@ export function createApiApp() {
       }
       const resolvedKey = apiKey || (envVar ? process.env[envVar] : undefined);
       if (!resolvedKey) {
-        return res.json({ success: false, error: envVar ? `No API key found in env var "${envVar}"` : "API key is required" });
+        return res.json({ success: false, kind: "auth", error: envVar ? `No API key found in env var "${envVar}"` : "API key is required" });
       }
 
       const response = await fetch(`${baseURL.replace(/\/$/, "")}/models`, {
@@ -60,11 +79,19 @@ export function createApiApp() {
       });
 
       if (!response.ok) {
-        return res.json({ success: false, error: `Provider responded with ${response.status}` });
+        // Read the provider's own error message (e.g. "Invalid API Key") rather than a bare status.
+        const body: any = await response.json().catch(() => null);
+        const providerMsg = body?.error?.message || body?.message;
+        const kind: LLMErrorKind =
+          response.status === 401 || response.status === 403 ? "auth"
+          : response.status === 429 ? "rate_limit"
+          : response.status >= 500 ? "network"
+          : "unknown";
+        return res.json({ success: false, kind, error: providerMsg || `Provider responded with ${response.status}` });
       }
       res.json({ success: true });
     } catch (error: any) {
-      res.json({ success: false, error: error.message || "Connection failed" });
+      res.json({ success: false, kind: "network", error: error.message || "Connection failed" });
     }
   });
 
@@ -73,11 +100,11 @@ export function createApiApp() {
       const { word, letter_count, tone, mode, provider } = req.body;
 
       if (!word) {
-        return res.status(400).json({ success: false, error: "Seed word is required" });
+        return res.status(400).json({ success: false, kind: "validation", error: "Seed word is required" });
       }
       const isArabic = /^[؀-ۿ]/.test(word.trim());
       if (!isArabic) {
-        return res.status(400).json({ success: false, error: "Seed word must start with an Arabic character" });
+        return res.status(400).json({ success: false, kind: "validation", error: "Seed word must start with an Arabic character" });
       }
 
       const extractor = mode ? WORD_LIST_EXTRACTORS[mode] : undefined;
@@ -99,7 +126,7 @@ export function createApiApp() {
       res.json({ success: true, suggestions });
     } catch (error: any) {
       console.error("API suggest error:", error);
-      res.status(500).json({ success: false, error: error.message || "Failed to fetch brand names" });
+      sendError(res, error, "Failed to fetch brand names");
     }
   });
 

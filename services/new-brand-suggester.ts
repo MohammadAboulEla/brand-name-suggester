@@ -13,6 +13,42 @@ const ai = new GoogleGenAI({
   }
 });
 
+// Narrow, machine-readable failure categories that flow engine -> API -> client.
+// A legitimately empty result is NOT one of these — it stays a valid empty success.
+export type LLMErrorKind = "auth" | "rate_limit" | "network" | "parse" | "unknown";
+
+// Typed error thrown by generateJson (and re-thrown by transliterate_word) so the
+// API route can map it to an HTTP status + `kind` instead of swallowing it as `null`.
+export class LLMError extends Error {
+  kind: LLMErrorKind;
+  constructor(kind: LLMErrorKind, message?: string) {
+    super(message ?? kind);
+    this.name = "LLMError";
+    this.kind = kind;
+  }
+}
+
+// Classifies a raw provider/SDK error (OpenAI-compatible or Gemini) into an LLMErrorKind.
+function classifyError(error: any): LLMErrorKind {
+  const status = error?.status ?? error?.response?.status;
+  const code = String(error?.code ?? error?.response?.data?.error?.code ?? "").toLowerCase();
+
+  if (status === 401 || status === 403 || code.includes("invalid_api_key") || code.includes("permission")) {
+    return "auth";
+  }
+  if (status === 429 || code === "429") {
+    return "rate_limit";
+  }
+  if (
+    typeof status === "number" && status >= 500 ||
+    ["econnrefused", "econnreset", "etimedout", "enotfound", "und_err_connect_timeout"].includes(code) ||
+    /fetch failed|network|timeout/i.test(String(error?.message ?? ""))
+  ) {
+    return "network";
+  }
+  return "unknown";
+}
+
 export interface SuggestedBrand {
   word: string;
   transliteration: string;
@@ -160,16 +196,16 @@ async function generateJson<T>(
       return response.text ?? null;
     })());
   } catch (error: any) {
-    // Rate limiting (429) or transient upstream errors were previously uncaught
-    // and bubbled all the way out of extractAntonyms/etc. Retry once after a
-    // short backoff on 429, otherwise give up gracefully with null.
-    const status = error?.status ?? error?.response?.status ?? error?.code;
-    if (status === 429 && attempt < 3) {
+    // Retry with backoff on rate limits; every other failure is classified and
+    // thrown as a typed LLMError so the API route can surface an accurate message
+    // instead of silently collapsing into an empty ("no results") response.
+    const kind = classifyError(error);
+    if (kind === "rate_limit" && attempt < 3) {
       await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
       return generateJson<T>(prompt, provider, schema, temperature, label, attempt + 1);
     }
     console.error(`Error generating ${label}:`, error);
-    return null;
+    throw new LLMError(kind, error?.message);
   }
 
   if (!text) return null;
@@ -184,7 +220,7 @@ async function generateJson<T>(
       return generateJson<T>(stricterPrompt, provider, schema, temperature, label, attempt + 1);
     }
     console.error(`Error parsing ${label}:`, error);
-    return null;
+    throw new LLMError("parse", "Failed to parse model response as JSON");
   }
 }
 
@@ -220,8 +256,12 @@ Output: RAWDAH`;
       return response.text ?? null;
     })());
     return text ? sanitizeTransliteration(text, word) : word.toUpperCase();
-  } catch (e) {
+  } catch (e: any) {
     console.error("Transliteration failed:", e);
+    // Surface real provider failures (a bad key must not masquerade as a
+    // transliteration); fall back to the uppercased word only for benign errors.
+    const kind = classifyError(e);
+    if (kind === "auth" || kind === "network") throw new LLMError(kind, e?.message);
     return word.toUpperCase();
   }
 }

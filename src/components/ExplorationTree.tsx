@@ -14,10 +14,11 @@ import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { GroupNode } from "./GroupNode";
 import { BrandNodeData, SuggestionMode } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink } from "lucide-react";
+import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink, AlertTriangle } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
+import { messageFor } from "../errorMessages";
 
 const nodeTypes = {
   brandNode: BrandNode,
@@ -205,7 +206,11 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { fitView } = useReactFlow();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Banner carries a severity so failures (red) read differently from neutral
+  // notices like "no results" / "nothing saved" (accent). null hides the banner.
+  const [banner, setBanner] = useState<{ text: string; severity: "info" | "error" } | null>(null);
+  const showError = useCallback((text: string) => setBanner({ text, severity: "error" }), []);
+  const showInfo = useCallback((text: string) => setBanner({ text, severity: "info" }), []);
   const [showGuide, setShowGuide] = useState(false);
 
   const regenerateRef = useRef<any>(null);
@@ -240,7 +245,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
     // Prevent deleting the root node
     if (nodeToDeleteObj.data.isRoot) {
-      setErrorMessage("لا يمكن حذف العقدة الرئيسية للشجرة!"); // Arabic: "Cannot delete the root node of the tree!"
+      showError("لا يمكن حذف العقدة الرئيسية للشجرة!"); // Arabic: "Cannot delete the root node of the tree!"
       return;
     }
 
@@ -285,7 +290,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     if (!nodeObj) return;
 
     if (nodeObj.data.isRoot) {
-      setErrorMessage("لا يمكن حذف العقدة الرئيسية للشجرة!");
+      showError("لا يمكن حذف العقدة الرئيسية للشجرة!");
       return;
     }
 
@@ -436,7 +441,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       const targetWord = currentData.word;
 
       try {
-        setErrorMessage(null);
+        setBanner(null);
         let suggestions: { word: string; transliteration: string }[] = [];
 
         if (isFakeModeRef.current) {
@@ -463,7 +468,8 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           if (data.success && Array.isArray(data.suggestions)) {
             suggestions = data.suggestions;
           } else if (!data.success) {
-            throw new Error(data.error || "Failed to fetch brand names");
+            // Carry the server's `kind` so the catch can render an accurate Arabic message.
+            throw Object.assign(new Error(data.error || "Failed to fetch brand names"), { kind: data.kind });
           }
         }
 
@@ -604,8 +610,8 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
           setEdges((currentEdges) => [...currentEdges, ...newEdges]);
         } else {
-          // Empty state: handle gracefully (e.g. prompt constraint issue)
-          setErrorMessage(`No matching Arabic brand names found with current filters for "${targetWord}". Try relaxing letter counts or choosing another word!`);
+          // Genuine empty result (model returned no matches) — a neutral notice, not an error.
+          showInfo(messageFor("empty", targetWord));
           setNodes((currentNodes) =>
             currentNodes.map((n) =>
               n.id === nodeId
@@ -616,11 +622,9 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         }
       } catch (error) {
         console.error("Expand branching failed:", error);
-        setErrorMessage(
-          error instanceof Error && error.message
-            ? error.message
-            : "Network error or server timeout. Please check your connection and try again."
-        );
+        // A server-sent `kind` -> Arabic message; anything else (fetch reject) is a network failure.
+        const kind = (error as any)?.kind;
+        showError(kind ? messageFor(kind) : messageFor("network"));
         setNodes((currentNodes) =>
           currentNodes.map((n) =>
             n.id === nodeId
@@ -686,7 +690,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   const handleEditWord = useCallback((nodeId: string, newWord: string) => {
     const isArabic = /^[\u0600-\u06FF]/.test(newWord.trim());
     if (!isArabic) {
-      setErrorMessage("عذراً، يجب أن تبدأ الكلمة المُعدلة بحرف عربي!");
+      showError("عذراً، يجب أن تبدأ الكلمة المُعدلة بحرف عربي!");
       return false;
     }
 
@@ -749,7 +753,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
     const isArabic = /^[؀-ۿ]/.test(String(data.rootWord).trim());
     if (!isArabic) {
-      setErrorMessage("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
+      showError("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
       return false;
     }
 
@@ -826,7 +830,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
     setNodes(reconstructedNodes);
     setEdges(reconstructedEdges);
-    setErrorMessage(null);
+    setBanner(null);
 
     const loadedFavs = Array.isArray(data.favorites) ? data.favorites : [];
     const loadedSelected = typeof data.selectedWord === "string" ? data.selectedWord : null;
@@ -839,16 +843,16 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     try {
       const raw = localStorage.getItem(LAST_TREE_STORAGE_KEY);
       if (!raw) {
-        setErrorMessage("لا يوجد عمل محفوظ سابقاً على هذا الجهاز.");
+        showInfo("لا يوجد عمل محفوظ سابقاً على هذا الجهاز.");
         return;
       }
       const ok = applyProjectData(JSON.parse(raw));
       if (!ok) {
-        setErrorMessage("عذراً، تعذّر استرجاع العمل المحفوظ.");
+        showError("عذراً، تعذّر استرجاع العمل المحفوظ.");
       }
     } catch (err) {
       console.error("Failed to load last tree:", err);
-      setErrorMessage("عذراً, تعذّر استرجاع العمل المحفوظ.");
+      showError("عذراً, تعذّر استرجاع العمل المحفوظ.");
     }
   }, [applyProjectData]);
 
@@ -888,7 +892,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     }
 
     if (targetsToDelete.size === 0) {
-      setErrorMessage("لا توجد أسماء مكررة في الشجرة.");
+      showInfo("لا توجد أسماء مكررة في الشجرة.");
       return;
     }
 
@@ -1002,7 +1006,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Failed to save project:", err);
-      setErrorMessage("عذراً، فشل حفظ المشروع.");
+      showError("عذراً، فشل حفظ المشروع.");
     }
   }, [serializeProject, rootWord]);
 
@@ -1029,14 +1033,14 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
         const isArabic = /^[\u0600-\u06FF]/.test(data.rootWord.trim());
         if (!isArabic) {
-          setErrorMessage("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
+          showError("عذراً، يجب أن يبدأ المشروع المُحمّل بكلمة جذر عربية!");
           return;
         }
 
         applyProjectData(data);
       } catch (err) {
         console.error("Failed to load project:", err);
-        setErrorMessage("عذراً، فشل تحميل ملف المشروع. تأكد من صحة الملف.");
+        showError("عذراً، فشل تحميل ملف المشروع. تأكد من صحة الملف.");
       } finally {
         if (event.target) {
           event.target.value = "";
@@ -1077,7 +1081,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
     setNodes([initialNode]);
     setEdges([]);
-    setErrorMessage(null);
+    setBanner(null);
   }, [setNodes, setEdges, handleExpand, handleNodeSelect, autoEditRoot, isCompactMoreMenu]);
 
   // Auto-initialize tree if not already initialized
@@ -1152,33 +1156,36 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       h-full w-full
     ">
       
-      {/* Visual Error Message banner */}
-      {errorMessage && (
-        <div className="
+      {/* Status banner — red for failures, accent for neutral notices (empty result, etc.) */}
+      {banner && (
+        <div className={`
           absolute flex
           gap-2 items-center
           max-w-lg
           px-4 py-3
           text-text-main text-xs
-          bg-accent-bg
-          border-2 border-accent rounded-2xl
+          border-2 rounded-2xl
           md:-translate-x-1/2 md:left-1/2 md:right-auto
           left-4 right-4 top-4 z-50
-        ">
-          <Sparkles className="
-            h-4 shrink-0 w-4
-            text-accent
-          " />
+          ${banner.severity === "error"
+            ? "bg-red-500/10 border-red-500"
+            : "bg-accent-bg border-accent"}
+        `}>
+          {banner.severity === "error"
+            ? <AlertTriangle className="h-4 shrink-0 w-4 text-red-500" />
+            : <Sparkles className="h-4 shrink-0 w-4 text-accent" />}
           <span className="
             font-medium
-          ">{errorMessage}</span>
+          ">{banner.text}</span>
           <button
-            onClick={() => setErrorMessage(null)}
-            className="
+            onClick={() => setBanner(null)}
+            className={`
               ml-auto px-1
-              font-bold text-accent
-              hover:text-accent-hover
-            "
+              font-bold
+              ${banner.severity === "error"
+                ? "text-red-500 hover:text-red-600"
+                : "text-accent hover:text-accent-hover"}
+            `}
           >
             ×
           </button>
