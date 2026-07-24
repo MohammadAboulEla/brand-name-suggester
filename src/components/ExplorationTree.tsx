@@ -14,11 +14,12 @@ import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
 import { GroupNode } from "./GroupNode";
 import { BrandNodeData, SuggestionMode } from "../types";
-import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink, AlertTriangle } from "lucide-react";
+import { HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { motion, AnimatePresence } from "motion/react";
 import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 import { messageFor } from "../errorMessages";
+import { StatusBanner, type BannerState } from "./StatusBanner";
 
 const nodeTypes = {
   brandNode: BrandNode,
@@ -208,7 +209,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   const { fitView } = useReactFlow();
   // Banner carries a severity so failures (red) read differently from neutral
   // notices like "no results" / "nothing saved" (accent). null hides the banner.
-  const [banner, setBanner] = useState<{ text: string; severity: "info" | "error" } | null>(null);
+  const [banner, setBanner] = useState<BannerState>(null);
   const showError = useCallback((text: string) => setBanner({ text, severity: "error" }), []);
   const showInfo = useCallback((text: string) => setBanner({ text, severity: "info" }), []);
   const [showGuide, setShowGuide] = useState(false);
@@ -1157,40 +1158,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     ">
       
       {/* Status banner — red for failures, accent for neutral notices (empty result, etc.) */}
-      {banner && (
-        <div className={`
-          absolute flex
-          gap-2 items-center
-          max-w-lg
-          px-4 py-3
-          text-text-main text-xs
-          border-2 rounded-2xl
-          md:-translate-x-1/2 md:left-1/2 md:right-auto
-          left-4 right-4 top-4 z-50
-          ${banner.severity === "error"
-            ? "bg-red-500/10 border-red-500"
-            : "bg-accent-bg border-accent"}
-        `}>
-          {banner.severity === "error"
-            ? <AlertTriangle className="h-4 shrink-0 w-4 text-red-500" />
-            : <Sparkles className="h-4 shrink-0 w-4 text-accent" />}
-          <span className="
-            font-medium
-          ">{banner.text}</span>
-          <button
-            onClick={() => setBanner(null)}
-            className={`
-              ml-auto px-1
-              font-bold
-              ${banner.severity === "error"
-                ? "text-red-500 hover:text-red-600"
-                : "text-accent hover:text-accent-hover"}
-            `}
-          >
-            ×
-          </button>
-        </div>
-      )}
+      <StatusBanner banner={banner} onClose={() => setBanner(null)} />
 
       {/* Guide Help Info Button */}
       <div 
