@@ -37,6 +37,8 @@ export const GroupNode: React.FC<NodeProps> = ({ id, data }) => {
 
       <div
         className="
+          flex
+          gap-1.5 items-center
           px-3 py-1
           font-bold font-sans text-sm text-accent
           bg-accent-bg
@@ -45,31 +47,31 @@ export const GroupNode: React.FC<NodeProps> = ({ id, data }) => {
         "
         dir="rtl"
       >
-        {label}
-      </div>
+        {/* Collapse/expand dot: hides or shows the result subtree */}
+        <Tooltip content={collapsed ? "إظهار النتائج" : "إخفاء النتائج"} position="bottom">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCollapse?.(id);
+            }}
+            className="
+              flex
+              items-center justify-center
+              h-4 w-4
+              text-white
+              bg-accent
+              rounded-full
+              shadow-sm
+              hover:bg-accent-hover hover:scale-110
+              cursor-pointer transition-all
+            "
+          >
+            {collapsed ? <Plus className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
+          </button>
+        </Tooltip>
 
-      {/* Collapse/expand dot: hides or shows the result subtree */}
-      <Tooltip content={collapsed ? "إظهار النتائج" : "إخفاء النتائج"} position="bottom">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleCollapse?.(id);
-          }}
-          className="
-            flex
-            items-center justify-center
-            h-5 w-5
-            text-white
-            bg-accent
-            border-2 border-bg-panel rounded-full
-            shadow
-            hover:bg-accent-hover hover:scale-110
-            -mt-1 cursor-pointer transition-all
-          "
-        >
-          {collapsed ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-        </button>
-      </Tooltip>
+        <span>{label}</span>
+      </div>
     </div>
   );
 };
