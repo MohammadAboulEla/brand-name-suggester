@@ -176,12 +176,13 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
           body: JSON.stringify({ word, provider: toProviderRequest(loadAIProviderSettings()) }),
         });
         const json = await res.json();
-        if (json.success && isMounted) {
-          setLocalTransliteration(json.transliteration);
-        }
-        // TODO: surface json.kind (e.g. "auth") instead of silently keeping the old value.
+        if (!isMounted) return;
+        // On failure (e.g. auth/401) show nothing rather than a misleading
+        // uppercased-word default like "RAWDAH".
+        setLocalTransliteration(json.success ? json.transliteration : "");
       } catch (e) {
         console.error("Failed to fetch transliteration:", e);
+        if (isMounted) setLocalTransliteration("");
       }
     };
     fetchTransliteration();
