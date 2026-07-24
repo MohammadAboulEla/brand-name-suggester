@@ -1041,16 +1041,38 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   }), []);
 
   return (
-    <div className="w-full h-full relative">
+    <div className="
+      relative
+      h-full w-full
+    ">
       
       {/* Visual Error Message banner */}
       {errorMessage && (
-        <div className="absolute top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 bg-accent-bg border-2 border-accent text-text-main text-xs px-4 py-3 rounded-2xl flex items-center gap-2 z-50 max-w-lg">
-          <Sparkles className="w-4 h-4 text-accent shrink-0" />
-          <span className="font-medium">{errorMessage}</span>
+        <div className="
+          absolute flex
+          gap-2 items-center
+          max-w-lg
+          px-4 py-3
+          text-text-main text-xs
+          bg-accent-bg
+          border-2 border-accent rounded-2xl
+          md:-translate-x-1/2 md:left-1/2 md:right-auto
+          left-4 right-4 top-4 z-50
+        ">
+          <Sparkles className="
+            h-4 shrink-0 w-4
+            text-accent
+          " />
+          <span className="
+            font-medium
+          ">{errorMessage}</span>
           <button
             onClick={() => setErrorMessage(null)}
-            className="ml-auto text-accent hover:text-accent-hover font-bold px-1"
+            className="
+              ml-auto px-1
+              font-bold text-accent
+              hover:text-accent-hover
+            "
           >
             ×
           </button>
@@ -1059,7 +1081,12 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
       {/* Guide Help Info Button */}
       <div 
-        className="absolute bottom-4 left-4 z-45 flex flex-col items-start gap-2 font-sans"
+        className="
+          absolute flex
+          gap-2 items-start
+          font-sans
+          bottom-4 flex-col left-4 z-45
+        "
         onMouseEnter={() => setShowGuide(true)}
         onMouseLeave={() => setShowGuide(false)}
       >
@@ -1070,26 +1097,67 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-bg-panel/95 backdrop-blur-md border-2 border-border-main rounded-2xl p-3 max-w-[250px] text-[11px] text-text-muted space-y-1.5 shadow-xl"
+              className="
+                max-w-[250px]
+                p-3 space-y-1.5
+                text-[11px] text-text-muted
+                bg-bg-panel/95
+                border-2 border-border-main rounded-2xl
+                shadow-xl
+                backdrop-blur-md
+              "
             >
-              <div className="flex items-center gap-1.5 font-bold text-text-main pb-1 border-b border-border-main/40">
-                <HelpCircle className="w-3.5 h-3.5 text-accent" />
-                <span className="font-display">إرشادات التصفح</span>
+              <div className="
+                flex
+                gap-1.5 items-center
+                pb-1
+                font-bold text-text-main
+                border-b border-border-main/40
+              ">
+                <HelpCircle className="
+                  h-3.5 w-3.5
+                  text-accent
+                " />
+                <span className="
+                  font-display
+                ">إرشادات التصفح</span>
               </div>
-              <p dir="rtl" className="text-right font-medium leading-relaxed">
+              <p dir="rtl" className="
+                font-medium leading-relaxed text-right
+              ">
                 • حرك المؤشر فوق الكلمة لتظهر أقمار التحكم والخيارات.
               </p>
-              <p dir="rtl" className="text-right font-medium leading-relaxed">
-                • اضغط على <span className="text-accent font-semibold">عدد الحروف (#)</span> أو <span className="text-accent font-semibold">النبرة (✨)</span> لفلترة النتائج.
+              <p dir="rtl" className="
+                font-medium leading-relaxed text-right
+              ">
+                • اضغط على <span className="
+                  font-semibold text-accent
+                ">عدد الحروف (#)</span> أو <span className="
+                  font-semibold text-accent
+                ">النبرة (✨)</span> لفلترة النتائج.
               </p>
-              <p dir="rtl" className="text-right font-medium leading-relaxed">
-                • اضغط على زر <span className="text-accent font-semibold">المشتقات (تفرع)</span> أو <span className="text-accent font-semibold">الجموع (طبقات)</span> للتحويل لمسار توليد صرفي مخصص دقيق ومضمون.
+              <p dir="rtl" className="
+                font-medium leading-relaxed text-right
+              ">
+                • اضغط على زر <span className="
+                  font-semibold text-accent
+                ">المشتقات (تفرع)</span> أو <span className="
+                  font-semibold text-accent
+                ">الجموع (طبقات)</span> للتحويل لمسار توليد صرفي مخصص دقيق ومضمون.
               </p>
-              <p dir="rtl" className="text-right font-medium leading-relaxed">
-                • اضغط على <span className="text-accent font-semibold">الكلمة نفسها</span> لتفريغ الشجرة وتوليد فروع مذهلة!
+              <p dir="rtl" className="
+                font-medium leading-relaxed text-right
+              ">
+                • اضغط على <span className="
+                  font-semibold text-accent
+                ">الكلمة نفسها</span> لتفريغ الشجرة وتوليد فروع مذهلة!
               </p>
-              <p dir="rtl" className="text-right font-medium leading-relaxed">
-                • اضغط على <span className="text-accent font-semibold">القلب (♥)</span> لحفظ الاسم في قائمة المرشحات الجانبية.
+              <p dir="rtl" className="
+                font-medium leading-relaxed text-right
+              ">
+                • اضغط على <span className="
+                  font-semibold text-accent
+                ">القلب (♥)</span> لحفظ الاسم في قائمة المرشحات الجانبية.
               </p>
             </motion.div>
           )}
@@ -1097,10 +1165,23 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
 
         <button
           onClick={() => setShowGuide(!showGuide)}
-          className="w-8 h-8 rounded-full bg-bg-panel hover:bg-bg-page border-2 border-border-main flex items-center justify-center text-accent cursor-pointer transition-all hover:scale-105 shadow-sm"
+          className="
+            flex
+            items-center justify-center
+            h-8 w-8
+            text-accent
+            bg-bg-panel
+            border-2 border-border-main rounded-full
+            shadow-sm
+            hover:bg-bg-page hover:scale-105
+            cursor-pointer transition-all
+          "
           title="إرشادات التصفح"
         >
-          <HelpCircle className="w-4 h-4 stroke-[2px]" />
+          <HelpCircle className="
+            h-4 w-4
+            stroke-[2px]
+          " />
         </button>
       </div>
 
@@ -1116,88 +1197,195 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
-        className="w-full h-full"
+        className="
+          h-full w-full
+        "
         onNodeMouseEnter={(event, node) => setHoveredNode(node)}
         onNodeMouseLeave={(event, node) => setHoveredNode((prev) => prev?.id === node.id ? null : prev)}
         deleteKeyCode={null}
       >
         <Background color="#cbd5e1" gap={16} size={1} />
-        <Controls position="bottom-right" showInteractive={false} className="bg-bg-panel rounded-2xl border-2 border-border-main text-text-muted" />
+        <Controls position="bottom-right" showInteractive={false} className="
+          text-text-muted
+          bg-bg-panel
+          border-2 border-border-main rounded-2xl
+        " />
       </ReactFlow>
 
       {/* Cleanup tools (standalone, top-left) */}
-      <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
+      <div className="
+        absolute flex
+        gap-2 items-center
+        left-4 top-4 z-40
+      ">
         <Tooltip content="إزالة الأسماء المكررة (Remove Duplicate Names)" position="bottom" align="start">
           <button
             onClick={handleRemoveDuplicates}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <Eraser className="w-4 h-4 text-accent" />
+            <Eraser className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
         <Tooltip content="إعادة ترتيب وتنظيم الشجرة (Auto-arrange Tree)" position="bottom" align="start">
           <button
             onClick={handleAutoLayout}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <Network className="w-4 h-4 text-accent" />
+            <Network className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
         <Tooltip content="ترتيب مضغوط بأصغر مساحة (Compact Arrange)" position="bottom" align="center">
           <button
             onClick={handleCompactLayout}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <Shrink className="w-4 h-4 text-accent" />
+            <Shrink className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
       </div>
 
       {/* Project State Utilities: Load, Save, Reset */}
-      <div className="absolute top-4 right-[192px] z-40 flex items-center gap-2">
+      <div className="
+        absolute flex
+        gap-2 items-center
+        right-[192px] top-4 z-40
+      ">
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleLoadProjectFile}
           accept=".json"
-          className="hidden"
+          className="
+            hidden
+          "
         />
 
         <Tooltip content="تحميل مشروع من جهازك (Open/Load Project)" position="bottom" align="end">
           <button
             onClick={handleOpenProjectClick}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <Upload className="w-4 h-4 text-accent" />
+            <Upload className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
         <Tooltip content="حفظ المشروع الحالي (Save Project)" position="bottom" align="end">
           <button
             onClick={handleSaveProject}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <Download className="w-4 h-4 text-accent" />
+            <Download className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
         <Tooltip content="بدء مشروع جديد (Start New / Reset)" position="bottom" align="end">
           <button
             onClick={onReset}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <RotateCcw className="w-4 h-4 text-accent" />
+            <RotateCcw className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
         <Tooltip content="استرجاع آخر عمل محفوظ (Load Last Tree)" position="bottom" align="end">
           <button
             onClick={handleLoadLastTree}
-            className="bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main h-10 w-10 rounded-xl border-2 border-border-main flex items-center justify-center cursor-pointer transition-colors shadow-sm"
+            className="
+              flex
+              items-center justify-center
+              h-10 w-10
+              text-text-muted
+              bg-bg-panel
+              border-2 border-border-main rounded-xl
+              shadow-sm
+              hover:bg-bg-page hover:text-text-main
+              cursor-pointer transition-colors
+            "
           >
-            <History className="w-4 h-4 text-accent" />
+            <History className="
+              h-4 w-4
+              text-accent
+            " />
           </button>
         </Tooltip>
 
@@ -1206,14 +1394,23 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && nodeToDelete && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          <div className="
+            fixed flex
+            items-center justify-center
+            p-4
+            inset-0 z-[999]
+          ">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDeleteConfirm(false)}
-              className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm"
+              className="
+                absolute
+                bg-neutral-900/40
+                backdrop-blur-sm inset-0
+              "
             />
             
             {/* Modal Card */}
@@ -1222,25 +1419,62 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               transition={{ type: "spring", duration: 0.3 }}
-              className="relative bg-bg-panel border-2 border-border-main rounded-3xl p-6 shadow-2xl max-w-md w-full text-right font-sans z-10"
+              className="
+                relative
+                max-w-md w-full
+                p-6
+                font-sans text-right
+                bg-bg-panel
+                border-2 border-border-main rounded-3xl
+                shadow-2xl
+                z-10
+              "
               dir="rtl"
             >
-              <div className="flex items-start gap-4 mb-5">
-                <div className="w-12 h-12 rounded-2xl bg-rose-50 border-2 border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
-                  <Trash2 className="w-5 h-5" />
+              <div className="
+                flex
+                gap-4 items-start
+                mb-5
+              ">
+                <div className="
+                  flex
+                  items-center justify-center
+                  h-12 shrink-0 w-12
+                  text-rose-600
+                  bg-rose-50
+                  border-2 border-rose-200 rounded-2xl
+                ">
+                  <Trash2 className="
+                    h-5 w-5
+                  " />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-base text-text-main mb-1">
+                  <h3 className="
+                    mb-1
+                    font-bold font-display text-base text-text-main
+                  ">
                     تأكيد حذف العقدة (Confirm Node Deletion)
                   </h3>
-                  <p className="text-xs text-text-muted leading-relaxed">
-                    هل أنت متأكد من حذف الكلمة <span className="font-bold text-rose-600">"{nodeToDelete.data.word}"</span>؟ سيؤدي ذلك إلى حذف جميع العقد الفرعية المتفرعة منها بشكل نهائي.
+                  <p className="
+                    leading-relaxed text-text-muted text-xs
+                  ">
+                    هل أنت متأكد من حذف الكلمة <span className="
+                      font-bold text-rose-600
+                    ">"{nodeToDelete.data.word}"</span>؟ سيؤدي ذلك إلى حذف جميع العقد الفرعية المتفرعة منها بشكل نهائي.
                   </p>
                 </div>
               </div>
 
               {/* Option to ignore confirm modal this session */}
-              <div className="flex items-center gap-2.5 px-3 py-3 bg-bg-page border border-border-main/50 rounded-2xl mb-5 select-none text-right">
+              <div className="
+                flex
+                gap-2.5 items-center
+                mb-5 px-3 py-3
+                text-right
+                bg-bg-page
+                border border-border-main/50 rounded-2xl
+                select-none
+              ">
                 <input
                   id="ignore-confirm-checkbox"
                   type="checkbox"
@@ -1254,20 +1488,39 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
                       sessionStorage.removeItem("ignore_delete_confirm");
                     }
                   }}
-                  className="w-4 h-4 rounded border-border-main text-accent focus:ring-accent accent-accent cursor-pointer shrink-0"
+                  className="
+                    h-4 shrink-0 w-4
+                    text-accent
+                    border-border-main rounded
+                    focus:ring-accent
+                    accent-accent cursor-pointer
+                  "
                 />
                 <label
                   htmlFor="ignore-confirm-checkbox"
-                  className="text-[11px] font-bold text-text-muted cursor-pointer leading-normal"
+                  className="
+                    font-bold leading-normal text-[11px] text-text-muted
+                    cursor-pointer
+                  "
                 >
                   تخطي هذا التأكيد لهذه الجلسة وحذف العقد مباشرة عند الضغط على زر Delete
                 </label>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="
+                flex
+                gap-2 justify-end
+              ">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 bg-bg-page border-2 border-border-main hover:bg-neutral-50 text-text-muted hover:text-text-main font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                  className="
+                    px-4 py-2
+                    font-semibold text-text-muted text-xs
+                    bg-bg-page
+                    border-2 border-border-main rounded-xl
+                    hover:bg-neutral-50 hover:text-text-main
+                    cursor-pointer transition-colors
+                  "
                 >
                   إلغاء (Cancel)
                 </button>
@@ -1278,7 +1531,14 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
                       setShowDeleteConfirm(false);
                     }
                   }}
-                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs border border-rose-700 transition-colors cursor-pointer"
+                  className="
+                    px-5 py-2
+                    font-semibold text-white text-xs
+                    bg-rose-600
+                    border border-rose-700 rounded-xl
+                    hover:bg-rose-700
+                    cursor-pointer transition-colors
+                  "
                 >
                   تأكيد الحذف (Delete)
                 </button>

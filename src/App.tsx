@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, ChangeEvent } from "react";
-import clsx from "clsx";
 import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -131,20 +130,10 @@ export default function App() {
 
   return (
     <div
-      className={clsx(
-        "flex flex-col overflow-hidden select-none",
-        "h-screen w-screen",
-        "bg-bg-page text-text-main font-sans",
-        `theme-${currentTheme}`
-      )}
+      className={`flex flex-col overflow-hidden select-none h-screen w-screen bg-bg-page text-text-main font-sans theme-${currentTheme}`}
     >
       {/* Main Workspace without header */}
-      <div
-        className={clsx(
-          "relative flex flex-1 flex-col overflow-hidden",
-          "md:flex-row"
-        )}
-      >
+      <div className="relative flex flex-1 flex-col overflow-hidden md:flex-row">
         <AnimatePresence mode="wait">
           {!rootWord ? (
             <LandingPage
@@ -163,13 +152,10 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={clsx(
-                "relative flex flex-1 overflow-hidden",
-                "h-full"
-              )}
+              className="relative flex flex-1 overflow-hidden h-full"
             >
               {/* React Flow viewport canvas */}
-              <div className={clsx("relative flex-1", "h-full")}>
+              <div className="relative flex-1 h-full">
                 <ReactFlowProvider>
                   <ExplorationTree
                     rootWord={rootWord || ""}
@@ -192,45 +178,20 @@ export default function App() {
 
                 {/* Floating Active Seed Info Badge & Back Arrow */}
                 {!SKIP_LANDING && (
-                  <div
-                    className={clsx(
-                      "absolute top-4 left-4 z-40 flex items-center gap-2"
-                    )}
-                  >
-                    <div
-                      className={clsx(
-                        "flex items-center gap-2 px-3",
-                        "h-10",
-                        "bg-bg-panel",
-                        "border-2 border-border-main rounded-xl",
-                        "shadow-sm"
-                      )}
-                    >
+                  <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 h-10 bg-bg-panel border-2 border-border-main rounded-xl shadow-sm">
                       <button
                         onClick={() => setShowBackConfirm(true)}
-                        className={clsx(
-                          "flex items-center justify-center p-1 cursor-pointer",
-                          "text-text-muted hover:text-text-main",
-                          "rounded-lg",
-                          "hover:bg-bg-page transition-colors"
-                        )}
+                        className="flex items-center justify-center p-1 cursor-pointer text-text-muted hover:text-text-main rounded-lg hover:bg-bg-page transition-colors"
                       >
                         <ArrowRight className="w-4 h-4 rotate-180" />
                       </button>
-                      <div className={clsx("w-[1px] h-4", "bg-border-main")} />
-                      <span
-                        className={clsx(
-                          "text-text-muted font-sans font-semibold text-xs"
-                        )}
-                      >
+                      <div className="w-[1px] h-4 bg-border-main" />
+                      <span className="text-text-muted font-sans font-semibold text-xs">
                         Seed:
                       </span>
                       <span
-                        className={clsx(
-                          "px-2 py-0.5",
-                          "bg-accent-bg text-accent font-display font-bold text-xs",
-                          "border border-accent/20 rounded-lg"
-                        )}
+                        className="px-2 py-0.5 bg-accent-bg text-accent font-display font-bold text-xs border border-accent/20 rounded-lg"
                         dir="rtl"
                       >
                         {rootWord}
@@ -242,9 +203,7 @@ export default function App() {
                 {/* Floating Sidebar Toggle and Settings Buttons (on the right) */}
                 <div
                   ref={rightControlsRef}
-                  className={clsx(
-                    "absolute top-4 right-4 z-40 flex items-center gap-2"
-                  )}
+                  className="absolute top-4 right-4 z-40 flex items-center gap-2"
                 >
                   {/* AI Provider Settings Button */}
                   <Tooltip
@@ -253,14 +212,7 @@ export default function App() {
                   >
                     <button
                       onClick={() => setIsAISettingsOpen(true)}
-                      className={clsx(
-                        "flex items-center justify-center cursor-pointer",
-                        "w-10 h-10",
-                        "bg-bg-panel hover:bg-bg-page",
-                        "text-text-muted hover:text-text-main",
-                        "border-2 border-border-main rounded-xl",
-                        "shadow-sm transition-all hover:scale-105"
-                      )}
+                      className="flex items-center justify-center cursor-pointer w-10 h-10 bg-bg-panel hover:bg-bg-page text-text-muted hover:text-text-main border-2 border-border-main rounded-xl shadow-sm transition-all hover:scale-105"
                     >
                       <Bot className="w-4 h-4" />
                     </button>
@@ -276,16 +228,11 @@ export default function App() {
                         setIsSettingsOpen(!isSettingsOpen);
                         setIsSidebarOpen(false);
                       }}
-                      className={clsx(
-                        "flex items-center justify-center cursor-pointer",
-                        "w-10 h-10",
-                        "bg-bg-panel hover:bg-bg-page",
-                        "border-2 rounded-xl",
-                        "shadow-sm transition-all hover:scale-105",
+                      className={`flex items-center justify-center cursor-pointer w-10 h-10 bg-bg-panel hover:bg-bg-page border-2 rounded-xl shadow-sm transition-all hover:scale-105 ${
                         isSettingsOpen
                           ? "bg-accent-bg/10 text-accent border-accent"
                           : "text-text-muted hover:text-text-main border-border-main"
-                      )}
+                      }`}
                     >
                       <Settings className="w-4 h-4" />
                     </button>
@@ -302,31 +249,18 @@ export default function App() {
                         setIsSidebarOpen(!isSidebarOpen);
                         setIsSettingsOpen(false);
                       }}
-                      className={clsx(
-                        "flex items-center gap-1.5 px-2.5 cursor-pointer",
-                        "h-10",
-                        "bg-bg-panel hover:bg-bg-page",
-                        "border-2 rounded-xl",
-                        "shadow-sm transition-all hover:scale-105",
+                      className={`flex items-center gap-1.5 px-2.5 cursor-pointer h-10 bg-bg-panel hover:bg-bg-page border-2 rounded-xl shadow-sm transition-all hover:scale-105 ${
                         isSidebarOpen
                           ? "bg-accent-bg/10 text-accent border-accent"
                           : "text-text-muted hover:text-text-main border-border-main"
-                      )}
+                      }`}
                     >
                       <Heart
-                        className={clsx(
-                          "w-4 h-4",
-                          favorites.length > 0 && "fill-rose-500 text-rose-500"
-                        )}
+                        className={`w-4 h-4 ${
+                          favorites.length > 0 ? "fill-rose-500 text-rose-500" : ""
+                        }`}
                       />
-                      <div
-                        className={clsx(
-                          "flex items-center justify-center",
-                          "w-5 h-5",
-                          "bg-accent text-white font-bold text-[10px]",
-                          "rounded-md"
-                        )}
-                      >
+                      <div className="flex items-center justify-center w-5 h-5 bg-accent text-white font-bold text-[10px] rounded-md">
                         {favorites.length}
                       </div>
                     </button>
@@ -343,36 +277,19 @@ export default function App() {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 320, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                    className={clsx(
-                      "absolute top-0 right-0 z-50 flex flex-col",
-                      "h-full",
-                      "bg-bg-panel",
-                      "border-l-2 border-border-main",
-                      "shadow-2xl"
-                    )}
+                    className="absolute top-0 right-0 z-50 flex flex-col h-full bg-bg-panel border-l-2 border-border-main shadow-2xl"
                     style={{ width: "320px" }}
                   >
-                    <div className={clsx("flex flex-col p-5", "h-full min-w-[320px]")}>
+                    <div className="flex flex-col p-5 h-full min-w-[320px]">
                       {/* Sidebar Header */}
-                      <div className={clsx("flex items-center justify-between mb-6")}>
+                      <div className="flex items-center justify-between mb-6">
                         <button
                           onClick={() => setIsSidebarOpen(false)}
-                          className={clsx(
-                            "px-2.5 py-1.5 cursor-pointer",
-                            "text-text-muted hover:text-text-main font-sans font-bold text-xs",
-                            "border border-border-main rounded-xl",
-                            "hover:bg-bg-page transition-colors"
-                          )}
+                          className="px-2.5 py-1.5 cursor-pointer text-text-muted hover:text-text-main font-sans font-bold text-xs border border-border-main rounded-xl hover:bg-bg-page transition-colors"
                         >
                           إغلاق ×
                         </button>
-                        <span
-                          className={clsx(
-                            "px-2.5 py-1",
-                            "bg-accent-bg text-accent font-sans font-bold text-[10px] tracking-wider",
-                            "border border-accent/20 rounded-full"
-                          )}
-                        >
+                        <span className="px-2.5 py-1 bg-accent-bg text-accent font-sans font-bold text-[10px] tracking-wider border border-accent/20 rounded-full">
                           FAVORITES
                         </span>
                       </div>
@@ -382,12 +299,7 @@ export default function App() {
                         <button
                           onClick={handleCopyAll}
                           title="Copy all names, each on a new line"
-                          className={clsx(
-                            "flex items-center justify-center gap-2 mb-5 px-4 py-3 cursor-pointer",
-                            "w-full",
-                            "bg-accent hover:bg-accent/90 text-white font-bold text-sm",
-                            "rounded-2xl shadow-sm transition-colors"
-                          )}
+                          className="flex items-center justify-center gap-2 mb-5 px-4 py-3 cursor-pointer w-full bg-accent hover:bg-accent/90 text-white font-bold text-sm rounded-2xl shadow-sm transition-colors"
                         >
                           {copiedAll ? (
                             <>
@@ -404,56 +316,36 @@ export default function App() {
                       )}
 
                       {/* Favorites Candidates panel */}
-                      <div className={clsx("flex flex-col flex-1 overflow-hidden")}>
-                        <h3
-                          className={clsx(
-                            "flex items-center gap-1.5 mb-3",
-                            "text-text-muted font-semibold text-xs uppercase tracking-widest"
-                          )}
-                        >
-                          <Leaf className={clsx("w-3.5 h-3.5", "text-accent")} />
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <h3 className="flex items-center gap-1.5 mb-3 text-text-muted font-semibold text-xs uppercase tracking-widest">
+                          <Leaf className="w-3.5 h-3.5 text-accent" />
                           <span>الأسماء المرشحة ({favorites.length})</span>
                         </h3>
 
                         {favorites.length > 0 ? (
-                          <div className={clsx("flex-1 space-y-2 pr-1 overflow-y-auto")}>
+                          <div className="flex-1 space-y-2 pr-1 overflow-y-auto">
                             {favorites.map((favWord) => (
                               <div
                                 key={favWord}
-                                className={clsx(
-                                  "flex items-center justify-between p-2.5",
-                                  "bg-bg-page/50",
-                                  "border-2 border-border-main hover:border-accent/40 rounded-xl",
-                                  "transition-colors"
-                                )}
+                                className="flex items-center justify-between p-2.5 bg-bg-page/50 border-2 border-border-main hover:border-accent/40 rounded-xl transition-colors"
                               >
-                                <div className={clsx("flex items-center gap-1.5")}>
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     onClick={() =>
                                       handleRemoveFavorite(favWord)
                                     }
                                     title="Delete candidate"
-                                    className={clsx(
-                                      "p-1.5 cursor-pointer",
-                                      "text-text-muted hover:text-rose-500",
-                                      "rounded-lg",
-                                      "hover:bg-rose-50 transition-colors"
-                                    )}
+                                    className="p-1.5 cursor-pointer text-text-muted hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => handleCopy(favWord)}
                                     title="Copy name"
-                                    className={clsx(
-                                      "p-1.5 cursor-pointer",
-                                      "text-text-muted hover:text-text-main",
-                                      "rounded-lg",
-                                      "hover:bg-bg-page transition-colors"
-                                    )}
+                                    className="p-1.5 cursor-pointer text-text-muted hover:text-text-main rounded-lg hover:bg-bg-page transition-colors"
                                   >
                                     {copiedWord === favWord ? (
-                                      <Check className={clsx("w-3.5 h-3.5", "text-accent")} />
+                                      <Check className="w-3.5 h-3.5 text-accent" />
                                     ) : (
                                       <Copy className="w-3.5 h-3.5" />
                                     )}
@@ -461,11 +353,7 @@ export default function App() {
                                 </div>
                                 <span
                                   onClick={() => handleCopy(favWord)}
-                                  className={clsx(
-                                    "pr-2 cursor-pointer",
-                                    "text-text-main hover:text-accent font-display font-bold text-base",
-                                    "transition-colors"
-                                  )}
+                                  className="pr-2 cursor-pointer text-text-main hover:text-accent font-display font-bold text-base transition-colors"
                                   dir="rtl"
                                 >
                                   {favWord}
@@ -474,32 +362,20 @@ export default function App() {
                             ))}
                           </div>
                         ) : (
-                          <div
-                            className={clsx(
-                              "flex flex-col flex-1 items-center justify-center p-4 py-6 text-center",
-                              "bg-bg-page/40 text-text-muted text-xs",
-                              "border-2 border-dashed border-border-main rounded-2xl"
-                            )}
-                          >
-                            <FileText className={clsx("mb-2", "w-6 h-6", "text-text-muted/40")} />
+                          <div className="flex flex-col flex-1 items-center justify-center p-4 py-6 text-center bg-bg-page/40 text-text-muted text-xs border-2 border-dashed border-border-main rounded-2xl">
+                            <FileText className="mb-2 w-6 h-6 text-text-muted/40" />
                             <p>لم يتم حفظ أي أسماء بعد.</p>
                           </div>
                         )}
                       </div>
 
                       {/* Footnote on Arabic Lexicon */}
-                      <div
-                        className={clsx(
-                          "shrink-0 mt-4 pt-4 space-y-1.5",
-                          "text-text-muted text-[10px]",
-                          "border-t-2 border-border-main"
-                        )}
-                      >
-                        <div className={clsx("flex items-center gap-1", "text-text-main font-semibold")}>
+                      <div className="shrink-0 mt-4 pt-4 space-y-1.5 text-text-muted text-[10px] border-t-2 border-border-main">
+                        <div className="flex items-center gap-1 text-text-main font-semibold">
                           <HelpCircle className="w-3 h-3" />
                           <span>حول نظام الاشتقاق العربي</span>
                         </div>
-                        <p dir="rtl" className={clsx("text-right leading-relaxed")}>
+                        <p dir="rtl" className="text-right leading-relaxed">
                           يعتمد المولد على توسيع الجذور الثلاثية وتطبيق أوزان
                           صرفية قياسية لإنتاج كلمات حية ذات بعد بلاغي وجمالي.
                         </p>
@@ -515,92 +391,61 @@ export default function App() {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 320, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                    className={clsx(
-                      "absolute top-0 right-0 z-50 flex flex-col",
-                      "h-full",
-                      "bg-bg-panel",
-                      "border-l-2 border-border-main",
-                      "shadow-2xl"
-                    )}
+                    className="absolute top-0 right-0 z-50 flex flex-col h-full bg-bg-panel border-l-2 border-border-main shadow-2xl"
                     style={{ width: "320px" }}
                   >
-                    <div className={clsx("flex flex-col p-5 overflow-hidden", "h-full min-w-[320px]")}>
+                    <div className="flex flex-col p-5 overflow-hidden h-full min-w-[320px]">
                       {/* Sidebar Header */}
-                      <div className={clsx("shrink-0 flex items-center justify-between mb-6")}>
+                      <div className="shrink-0 flex items-center justify-between mb-6">
                         <button
                           onClick={() => setIsSettingsOpen(false)}
-                          className={clsx(
-                            "px-2.5 py-1.5 cursor-pointer",
-                            "text-text-muted hover:text-text-main font-sans font-bold text-xs",
-                            "border border-border-main rounded-xl",
-                            "hover:bg-bg-page transition-colors"
-                          )}
+                          className="px-2.5 py-1.5 cursor-pointer text-text-muted hover:text-text-main font-sans font-bold text-xs border border-border-main rounded-xl hover:bg-bg-page transition-colors"
                         >
                           إغلاق ×
                         </button>
-                        <span
-                          className={clsx(
-                            "px-2.5 py-1",
-                            "bg-accent-bg text-accent font-sans font-bold text-[10px] tracking-wider",
-                            "border border-accent/20 rounded-full"
-                          )}
-                        >
+                        <span className="px-2.5 py-1 bg-accent-bg text-accent font-sans font-bold text-[10px] tracking-wider border border-accent/20 rounded-full">
                           SETTINGS
                         </span>
                       </div>
 
-                      <div className={clsx("flex flex-col flex-1 gap-5 pr-1 overflow-y-auto")}>
+                      <div className="flex flex-col flex-1 gap-5 pr-1 overflow-y-auto">
                         {/* Option: Smoke Run / Fake Data Mode */}
                         <div>
-                          <h3
-                            className={clsx(
-                              "flex items-center gap-1.5 mb-3",
-                              "text-text-muted font-semibold text-xs uppercase tracking-widest"
-                            )}
-                          >
-                            <Sliders className={clsx("w-3.5 h-3.5", "text-accent")} />
+                          <h3 className="flex items-center gap-1.5 mb-3 text-text-muted font-semibold text-xs uppercase tracking-widest">
+                            <Sliders className="w-3.5 h-3.5 text-accent" />
                             <span>وضع التجربة السريع (Smoke Run)</span>
                           </h3>
 
                           <div
                             onClick={() => setIsFakeMode(!isFakeMode)}
-                            className={clsx(
-                              "relative flex flex-col gap-2 p-4 text-right cursor-pointer",
-                              "border-2 rounded-2xl",
-                              "transition-all overflow-hidden",
+                            className={`relative flex flex-col gap-2 p-4 text-right cursor-pointer border-2 rounded-2xl transition-all overflow-hidden ${
                               isFakeMode
                                 ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/50"
                                 : "bg-bg-page/40 border-dashed border-border-main hover:border-accent/40"
-                            )}
+                            }`}
                           >
-                            <div className={clsx("flex items-center justify-between")}>
-                              <div className={clsx("flex items-center gap-1.5")}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
                                 {isFakeMode ? (
-                                  <div className={clsx("flex items-center gap-1")}>
-                                    <span
-                                      className={clsx(
-                                        "w-2.5 h-2.5",
-                                        "bg-emerald-500 rounded-full",
-                                        "animate-pulse"
-                                      )}
-                                    />
-                                    <span className={clsx("text-emerald-500 font-bold text-[11px]")}>
+                                  <div className="flex items-center gap-1">
+                                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                                    <span className="text-emerald-500 font-bold text-[11px]">
                                       نشط (ON)
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className={clsx("text-text-muted font-bold text-[11px]")}>
+                                  <span className="text-text-muted font-bold text-[11px]">
                                     مغلق (OFF)
                                   </span>
                                 )}
                               </div>
-                              <span className={clsx("text-text-main font-display font-bold text-sm")}>
+                              <span className="text-text-main font-display font-bold text-sm">
                                 توليد كلمات وهمية
                               </span>
                             </div>
 
                             <p
-                              className={clsx("text-text-muted text-[11px] leading-relaxed")}
+                              className="text-text-muted text-[11px] leading-relaxed"
                               dir="rtl"
                             >
                               عند التفعيل، سيقوم المولد بإنشاء اشتقاقات عربية
@@ -610,39 +455,28 @@ export default function App() {
                           </div>
                         </div>
 
-                        <hr className={clsx("border-border-main/60")} />
+                        <hr className="border-border-main/60" />
 
                         {/* Color Themes Section */}
                         <div>
-                          <span
-                            className={clsx(
-                              "block mb-2",
-                              "text-text-muted font-sans font-semibold text-xs uppercase tracking-widest"
-                            )}
-                          >
+                          <span className="block mb-2 text-text-muted font-sans font-semibold text-xs uppercase tracking-widest">
                             مظهر الألوان (Color Theme)
                           </span>
-                          <div className={clsx("grid grid-cols-2 gap-1.5")}>
+                          <div className="grid grid-cols-2 gap-1.5">
                             {themes.map((t) => (
                               <button
                                 key={t.id}
                                 onClick={() => setCurrentTheme(t.id)}
-                                className={clsx(
-                                  "flex items-center gap-2 px-2.5 py-1.5 cursor-pointer",
-                                  "font-bold text-xs",
-                                  "border-2 rounded-xl transition-all",
+                                className={`flex items-center gap-2 px-2.5 py-1.5 cursor-pointer font-bold text-xs border-2 rounded-xl transition-all ${
                                   currentTheme === t.id
                                     ? "bg-accent-bg text-text-main border-accent"
                                     : "bg-transparent hover:bg-bg-page text-text-muted border-transparent"
-                                )}
+                                }`}
                               >
                                 <span
-                                  className={clsx(
-                                    "shrink-0 w-3 h-3 rounded-full",
-                                    t.dotClass
-                                  )}
+                                  className={`shrink-0 w-3 h-3 rounded-full ${t.dotClass}`}
                                 />
-                                <span className={clsx("font-display font-bold text-xs")}>
+                                <span className="font-display font-bold text-xs">
                                   {t.name.split(" ")[0]}
                                 </span>
                               </button>
@@ -650,19 +484,14 @@ export default function App() {
                           </div>
                         </div>
 
-                        <hr className={clsx("border-border-main/60")} />
+                        <hr className="border-border-main/60" />
 
                         {/* Edge Shapes Section */}
                         <div>
-                          <span
-                            className={clsx(
-                              "block mb-2",
-                              "text-text-muted font-sans font-semibold text-xs uppercase tracking-widest"
-                            )}
-                          >
+                          <span className="block mb-2 text-text-muted font-sans font-semibold text-xs uppercase tracking-widest">
                             شكل الروابط (Edge Shape)
                           </span>
-                          <div className={clsx("grid grid-cols-2 gap-1.5")}>
+                          <div className="grid grid-cols-2 gap-1.5">
                             {[
                               {
                                 id: "smoothstep",
@@ -684,19 +513,16 @@ export default function App() {
                               <button
                                 key={shape.id}
                                 onClick={() => setEdgeType(shape.id)}
-                                className={clsx(
-                                  "flex flex-col items-center justify-center px-2.5 py-1.5 text-center leading-tight cursor-pointer",
-                                  "font-bold text-xs",
-                                  "border-2 rounded-xl transition-all",
+                                className={`flex flex-col items-center justify-center px-2.5 py-1.5 text-center leading-tight cursor-pointer font-bold text-xs border-2 rounded-xl transition-all ${
                                   edgeType === shape.id
                                     ? "bg-accent-bg text-text-main border-accent"
                                     : "bg-transparent hover:bg-bg-page text-text-muted border-transparent"
-                                )}
+                                }`}
                               >
-                                <span className={clsx("font-display font-bold text-xs")}>
+                                <span className="font-display font-bold text-xs">
                                   {shape.name}
                                 </span>
-                                <span className={clsx("text-text-muted/80 font-mono text-[8px]")}>
+                                <span className="text-text-muted/80 font-mono text-[8px]">
                                   {shape.desc}
                                 </span>
                               </button>
@@ -704,70 +530,50 @@ export default function App() {
                           </div>
                         </div>
 
-                        <hr className={clsx("border-border-main/60")} />
+                        <hr className="border-border-main/60" />
 
                         {/* Edge Style Section */}
                         <div>
-                          <span
-                            className={clsx(
-                              "block mb-2",
-                              "text-text-muted font-sans font-semibold text-xs uppercase tracking-widest"
-                            )}
-                          >
+                          <span className="block mb-2 text-text-muted font-sans font-semibold text-xs uppercase tracking-widest">
                             نمط الخط (Edge Style)
                           </span>
-                          <div className={clsx("grid grid-cols-2 gap-1.5 font-sans")}>
+                          <div className="grid grid-cols-2 gap-1.5 font-sans">
                             <button
                               onClick={() => setIsEdgeDashed(false)}
-                              className={clsx(
-                                "flex flex-col items-center justify-center px-2.5 py-2 leading-tight cursor-pointer",
-                                "font-bold text-xs",
-                                "border-2 rounded-xl transition-all",
+                              className={`flex flex-col items-center justify-center px-2.5 py-2 leading-tight cursor-pointer font-bold text-xs border-2 rounded-xl transition-all ${
                                 !isEdgeDashed
                                   ? "bg-accent-bg text-text-main border-accent"
                                   : "bg-transparent hover:bg-bg-page text-text-muted border-transparent"
-                              )}
+                              }`}
                             >
-                              <span className={clsx("font-display font-bold text-xs")}>
+                              <span className="font-display font-bold text-xs">
                                 متصل
                               </span>
-                              <span className={clsx("mt-1 w-10 h-0.5 bg-current")} />
+                              <span className="mt-1 w-10 h-0.5 bg-current" />
                             </button>
                             <button
                               onClick={() => setIsEdgeDashed(true)}
-                              className={clsx(
-                                "flex flex-col items-center justify-center px-2.5 py-2 leading-tight cursor-pointer",
-                                "font-bold text-xs",
-                                "border-2 rounded-xl transition-all",
+                              className={`flex flex-col items-center justify-center px-2.5 py-2 leading-tight cursor-pointer font-bold text-xs border-2 rounded-xl transition-all ${
                                 isEdgeDashed
                                   ? "bg-accent-bg text-text-main border-accent"
                                   : "bg-transparent hover:bg-bg-page text-text-muted border-transparent"
-                              )}
+                              }`}
                             >
-                              <span className={clsx("font-display font-bold text-xs")}>
+                              <span className="font-display font-bold text-xs">
                                 متقطع
                               </span>
-                              <span
-                                className={clsx(
-                                  "mt-1.5 w-10",
-                                  "border-t border-dashed border-current"
-                                )}
-                              />
+                              <span className="mt-1.5 w-10 border-t border-dashed border-current" />
                             </button>
                           </div>
                         </div>
 
-                        <hr className={clsx("border-border-main/60")} />
+                        <hr className="border-border-main/60" />
 
                         {/* More Options Menu Style Section */}
                         <div>
                           <label
                             htmlFor="compact-more-menu-checkbox"
-                            className={clsx(
-                              "flex items-center gap-2.5 px-3 py-3 cursor-pointer select-none",
-                              "bg-bg-page/40 border-2 border-border-main hover:border-accent/40 rounded-2xl",
-                              "transition-colors"
-                            )}
+                            className="flex items-center gap-2.5 px-3 py-3 cursor-pointer select-none bg-bg-page/40 border-2 border-border-main hover:border-accent/40 rounded-2xl transition-colors"
                           >
                             <input
                               id="compact-more-menu-checkbox"
@@ -776,7 +582,7 @@ export default function App() {
                               onChange={(e: ChangeEvent<HTMLInputElement>) => setIsCompactMoreMenu(e.target.checked)}
                               className="w-4 h-4 rounded border-border-main text-accent focus:ring-accent accent-accent cursor-pointer shrink-0"
                             />
-                            <span className={clsx("text-text-main font-display font-bold text-sm")}>
+                            <span className="text-text-main font-display font-bold text-sm">
                               قائمة "المزيد" مضغوطة (أيقونات فقط)
                             </span>
                           </label>
@@ -784,18 +590,12 @@ export default function App() {
                       </div>
 
                       {/* Footnote on Settings */}
-                      <div
-                        className={clsx(
-                          "shrink-0 mt-4 pt-4 space-y-1.5",
-                          "text-text-muted text-[10px]",
-                          "border-t-2 border-border-main"
-                        )}
-                      >
-                        <div className={clsx("flex items-center gap-1", "text-text-main font-semibold")}>
+                      <div className="shrink-0 mt-4 pt-4 space-y-1.5 text-text-muted text-[10px] border-t-2 border-border-main">
+                        <div className="flex items-center gap-1 text-text-main font-semibold">
                           <HelpCircle className="w-3 h-3" />
                           <span>تخصيص كامل للنظام</span>
                         </div>
-                        <p dir="rtl" className={clsx("text-right leading-relaxed")}>
+                        <p dir="rtl" className="text-right leading-relaxed">
                           يمكنك اختيار المظهر والروابط المناسبة لبناء وتصور شجرة
                           علامتك التجارية بطريقتك الفريدة.
                         </p>
@@ -811,17 +611,14 @@ export default function App() {
         {/* Back Confirmation Dialog */}
         <AnimatePresence>
           {showBackConfirm && (
-            <div className={clsx("fixed inset-0 z-[100] flex items-center justify-center p-4")}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowBackConfirm(false)}
-                className={clsx(
-                  "absolute inset-0",
-                  "bg-black/60 backdrop-blur-sm"
-                )}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               />
 
               {/* Dialog Content */}
@@ -830,35 +627,22 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ type: "spring", duration: 0.4 }}
-                className={clsx(
-                  "relative z-10 p-6 text-center",
-                  "w-full max-w-md",
-                  "bg-bg-panel",
-                  "border-2 border-border-main rounded-3xl",
-                  "shadow-2xl"
-                )}
+                className="relative z-10 p-6 text-center w-full max-w-md bg-bg-panel border-2 border-border-main rounded-3xl shadow-2xl"
                 dir="rtl"
               >
-                <div
-                  className={clsx(
-                    "flex items-center justify-center mx-auto mb-4",
-                    "w-12 h-12",
-                    "bg-accent-bg text-accent",
-                    "border border-accent/20 rounded-2xl"
-                  )}
-                >
-                  <Compass className={clsx("w-6 h-6", "animate-spin-slow")} />
+                <div className="flex items-center justify-center mx-auto mb-4 w-12 h-12 bg-accent-bg text-accent border border-accent/20 rounded-2xl">
+                  <Compass className="w-6 h-6 animate-spin-slow" />
                 </div>
 
-                <h3 className={clsx("mb-2", "text-text-main font-display font-bold text-xl")}>
+                <h3 className="mb-2 text-text-main font-display font-bold text-xl">
                   هل أنت متأكد من العودة؟
                 </h3>
-                <p className={clsx("mb-6", "text-text-muted text-sm leading-relaxed")}>
+                <p className="mb-6 text-text-muted text-sm leading-relaxed">
                   ستفقد شجرة الاستكشاف الحالية والاشتقاقات غير المحفوظة في قائمة
                   المفضلة.
                 </p>
 
-                <div className={clsx("flex flex-col gap-2.5", "sm:flex-row")}>
+                <div className="flex flex-col gap-2.5 sm:flex-row">
                   <button
                     onClick={() => {
                       setRootWord(null);
@@ -866,35 +650,19 @@ export default function App() {
                       setSeedInput("");
                       setShowBackConfirm(false);
                     }}
-                    className={clsx(
-                      "flex-1 py-3 cursor-pointer",
-                      "bg-accent hover:bg-accent-hover text-white font-semibold text-sm",
-                      "border border-accent-hover/30 rounded-xl",
-                      "shadow-sm shadow-accent/10 transition-all"
-                    )}
+                    className="flex-1 py-3 cursor-pointer bg-accent hover:bg-accent-hover text-white font-semibold text-sm border border-accent-hover/30 rounded-xl shadow-sm shadow-accent/10 transition-all"
                   >
                     نعم، أريد العودة
                   </button>
                   <button
                     onClick={() => setShowBackConfirm(false)}
-                    className={clsx(
-                      "flex-1 py-3 cursor-pointer",
-                      "bg-bg-page hover:bg-border-main/20 text-text-main font-semibold text-sm",
-                      "border-2 border-border-main rounded-xl",
-                      "transition-all"
-                    )}
+                    className="flex-1 py-3 cursor-pointer bg-bg-page hover:bg-border-main/20 text-text-main font-semibold text-sm border-2 border-border-main rounded-xl transition-all"
                   >
                     إلغاء والذهاب للشجرة
                   </button>
                 </div>
 
-                <div
-                  className={clsx(
-                    "flex items-center justify-center gap-1 mt-4 pt-4",
-                    "text-text-muted font-sans text-[10px]",
-                    "border-t border-border-main/50"
-                  )}
-                >
+                <div className="flex items-center justify-center gap-1 mt-4 pt-4 text-text-muted font-sans text-[10px] border-t border-border-main/50">
                   <span>
                     Are you sure you want to exit? Unsaved changes will be lost.
                   </span>

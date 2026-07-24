@@ -144,19 +144,33 @@ async function generateJson<T>(
   label: string,
   attempt = 1
 ): Promise<T | null> {
-  const providerText = await generateWithProvider(prompt, provider, temperature);
-  const text = providerText ?? (await (async () => {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_TEXT_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-        temperature,
-      },
-    });
-    return response.text ?? null;
-  })());
+  let text: string | null;
+  try {
+    const providerText = await generateWithProvider(prompt, provider, temperature);
+    text = providerText ?? (await (async () => {
+      const response = await ai.models.generateContent({
+        model: DEFAULT_TEXT_MODEL,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: schema,
+          temperature,
+        },
+      });
+      return response.text ?? null;
+    })());
+  } catch (error: any) {
+    // Rate limiting (429) or transient upstream errors were previously uncaught
+    // and bubbled all the way out of extractAntonyms/etc. Retry once after a
+    // short backoff on 429, otherwise give up gracefully with null.
+    const status = error?.status ?? error?.response?.status ?? error?.code;
+    if (status === 429 && attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      return generateJson<T>(prompt, provider, schema, temperature, label, attempt + 1);
+    }
+    console.error(`Error generating ${label}:`, error);
+    return null;
+  }
 
   if (!text) return null;
 
