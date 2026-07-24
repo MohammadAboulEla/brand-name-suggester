@@ -599,11 +599,14 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
             newEdges.push(makeEdge(sourceId, childId));
           });
 
-          // Update nodes and edges in graph state
+          // Update nodes and edges in graph state. Only the default fan (mode null)
+          // marks the node "expanded" and disables its main click. Mode branches
+          // (antonyms/synonyms/…) append their own group and must leave the main
+          // click available so the node can still generate its normal result.
           setNodes((currentNodes) => {
             const updatedNodes = currentNodes.map((n) =>
               n.id === nodeId
-                ? { ...n, data: { ...n.data, loading: false, expanded: true } }
+                ? { ...n, data: { ...n.data, loading: false, expanded: constraints.mode ? n.data.expanded : true } }
                 : n
             );
             return [...updatedNodes, ...newNodes];
