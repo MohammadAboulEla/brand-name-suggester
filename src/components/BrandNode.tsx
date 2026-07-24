@@ -277,23 +277,22 @@ export const BrandNode: React.FC<NodeProps> = ({ id, data }) => {
       clearTimeout(moreMenuCloseTimer.current);
       moreMenuCloseTimer.current = null;
     }
-    if (onRegenerate) {
-      onRegenerate(id, { letter_count: letterCount, tone, mode: mode ?? null });
+    if (mode) {
+      // A specific mode appends its own group branch, leaving other modes' branches intact.
+      onExpand(id, { letter_count: letterCount, tone, mode });
+    } else if (onRegenerate) {
+      // No mode = "regenerate": clears and rebuilds the default fan.
+      onRegenerate(id, { letter_count: letterCount, tone, mode: null });
     }
     setShowMoreMenu(false);
   };
 
-  // Derivatives/plurals satellites generate immediately on click rather than acting as a
-  // sticky toggle: expand if the node has no children yet, otherwise regenerate them.
+  // Mode satellites (antonyms/rhymes) append their own group branch on each click,
+  // coexisting with any other modes already generated on this node.
   const handleQuickGenerate = (e: React.MouseEvent, mode: SuggestionMode) => {
     e.stopPropagation();
     if (loading) return;
-    const constraints = { letter_count: letterCount, tone, mode };
-    if (expanded) {
-      onRegenerate?.(id, constraints);
-    } else {
-      onExpand(id, constraints);
-    }
+    onExpand(id, { letter_count: letterCount, tone, mode });
   };
 
   return (

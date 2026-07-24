@@ -12,6 +12,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { BrandNode } from "./BrandNode";
+import { GroupNode } from "./GroupNode";
 import { BrandNodeData, SuggestionMode } from "../types";
 import { Sparkles, HelpCircle, RotateCcw, Trash2, Download, Upload, History, Eraser, Network, Shrink } from "lucide-react";
 import { Tooltip } from "./Tooltip";
@@ -20,7 +21,24 @@ import { loadAIProviderSettings, toProviderRequest } from "./AISettingsModal";
 
 const nodeTypes = {
   brandNode: BrandNode,
+  groupNode: GroupNode,
 };
+
+// Modes that insert an intermediate labelled "group" node between the parent and
+// its results. The label is shown on the accent rectangle. Add more modes here to
+// extend the behavior beyond synonyms.
+const MODE_GROUP_LABELS: Partial<Record<SuggestionMode, string>> = {
+  synonyms: "معاني",
+  antonyms: "أضداد",
+  nisba: "نسب",
+  rhymes: "قوافي",
+  compounds: "مركبات",
+  derivatives: "مشتقات",
+  plurals: "جموع",
+};
+
+// Distance from the parent down to its group node (shorter than a normal branch).
+const GROUP_DISTANCE = 130;
 
 const MOCK_TEST_WORDS = [
   { word: "تجربة", transliteration: "TAJRIBA" },
@@ -193,6 +211,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
   const regenerateRef = useRef<any>(null);
   const handleExpandRef = useRef<any>(null);
   const selectRef = useRef<any>(null);
+  const toggleCollapseRef = useRef<any>(null);
   const isFakeModeRef = useRef(isFakeMode);
 
   // Keep isFakeModeRef up to date
@@ -368,6 +387,30 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     );
   }, [onSelectWord, setNodes]);
 
+  // Collapse/expand a group node's result subtree by toggling `hidden` on its
+  // descendants (nodes + their incoming edges). The group node itself stays visible.
+  const handleToggleCollapse = useCallback((groupId: string) => {
+    const group = nodes.find((n) => n.id === groupId);
+    if (!group) return;
+    const nextCollapsed = !group.data.collapsed;
+    const descendants = new Set(getDescendants(groupId, nodes));
+
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        if (n.id === groupId) {
+          return { ...n, data: { ...n.data, collapsed: nextCollapsed } };
+        }
+        return descendants.has(n.id) ? { ...n, hidden: nextCollapsed } : n;
+      })
+    );
+
+    setEdges((currentEdges) =>
+      currentEdges.map((e) =>
+        descendants.has(e.target) ? { ...e, hidden: nextCollapsed } : e
+      )
+    );
+  }, [nodes, setNodes, setEdges]);
+
   // Primary API trigger to expand/branch from a node
   const handleExpand = useCallback(
     async (nodeId: string, constraints: { letter_count: number | null; tone: string | null; mode?: SuggestionMode | null }) => {
@@ -431,23 +474,6 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           const parentY = targetNode.position.y;
           const numChildren = suggestions.length;
 
-          let baseAngle = 0;
-          let isOutgoingFan = false;
-
-          // Determine branching direction based on relationship with parent node
-          if (!currentData.isRoot && currentData.parentId) {
-            // Find parent to compute outgoing direction vector
-            const parentNode = nodes.find((n) => n.id === currentData.parentId);
-            if (parentNode) {
-              const dx = parentX - parentNode.position.x;
-              const dy = parentY - parentNode.position.y;
-              if (dx !== 0 || dy !== 0) {
-                baseAngle = Math.atan2(dy, dx);
-                isOutgoingFan = true;
-              }
-            }
-          }
-
           const newNodes: Node[] = [];
           const newEdges: Edge[] = [];
 
@@ -458,10 +484,63 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
           // Gather all existing node positions to prevent overlaps
           const positionsToAvoid = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
 
+          // Shared edge styling for every line created in this expansion.
+          const makeEdge = (source: string, target: string): Edge => ({
+            id: `edge-${source}-${target}`,
+            source,
+            target,
+            type: edgeType,
+            style: {
+              stroke: EDGE_COLOR,
+              strokeWidth: 2,
+              strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
+            },
+            animated: isEdgeDashed,
+            pathOptions: edgeType === "smoothstep" ? { borderRadius: 16 } : undefined,
+          } as any);
+
+          // Some modes (currently `synonyms`) insert an intermediate labelled "group"
+          // node between the parent and the results, which can collapse/expand its set.
+          const groupLabel = constraints.mode ? MODE_GROUP_LABELS[constraints.mode] : undefined;
+
+          // Pivot the result fan radiates from, and the id the results attach to.
+          let pivotX = parentX;
+          let pivotY = parentY;
+          let sourceId = nodeId;
+
+          if (groupLabel && constraints.mode) {
+            let groupX = parentX;
+            let groupY = parentY + GROUP_DISTANCE;
+            const groupResolved = resolveOverlaps(groupX, groupY, positionsToAvoid, 140);
+            groupX = groupResolved.x;
+            groupY = groupResolved.y;
+            positionsToAvoid.push({ x: groupX, y: groupY });
+
+            const groupId = `group-${nodeId}-${Date.now()}`;
+            newNodes.push({
+              id: groupId,
+              type: "groupNode",
+              position: { x: groupX, y: groupY },
+              data: {
+                nodeKind: "group",
+                label: groupLabel,
+                mode: constraints.mode,
+                parentId: nodeId,
+                collapsed: false,
+                onToggleCollapse: (gid: string) => toggleCollapseRef.current?.(gid),
+              },
+            });
+            newEdges.push(makeEdge(nodeId, groupId));
+
+            pivotX = groupX;
+            pivotY = groupY;
+            sourceId = groupId;
+          }
+
           suggestions.forEach((childItem, index) => {
             const childWord = childItem.word;
             const childTranslit = childItem.transliteration;
-            const childId = `node-${nodeId}-${index}-${Date.now()}`;
+            const childId = `node-${sourceId}-${index}-${Date.now()}`;
             let angle = 0;
 
             if (numChildren === 1) {
@@ -470,8 +549,8 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               angle = centerAngle - sweep / 2 + (index * sweep) / (numChildren - 1);
             }
 
-            let posX = parentX + BRANCH_DISTANCE * Math.cos(angle);
-            let posY = parentY + BRANCH_DISTANCE * Math.sin(angle);
+            let posX = pivotX + BRANCH_DISTANCE * Math.cos(angle);
+            let posY = pivotY + BRANCH_DISTANCE * Math.sin(angle);
 
             // Dynamically push the child node away from any overlaps
             const resolved = resolveOverlaps(posX, posY, positionsToAvoid, 160);
@@ -488,7 +567,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               data: {
                 word: childWord,
                 transliteration: childTranslit,
-                parentId: nodeId,
+                parentId: sourceId,
                 isRoot: false,
                 loading: false,
                 expanded: false,
@@ -510,19 +589,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
               },
             });
 
-            newEdges.push({
-              id: `edge-${nodeId}-${childId}`,
-              source: nodeId,
-              target: childId,
-              type: edgeType,
-              style: { 
-                stroke: EDGE_COLOR,
-                strokeWidth: 2,
-                strokeDasharray: isEdgeDashed ? "5, 5" : undefined
-              },
-              animated: isEdgeDashed,
-              pathOptions: edgeType === "smoothstep" ? { borderRadius: 16 } : undefined,
-            } as any);
+            newEdges.push(makeEdge(sourceId, childId));
           });
 
           // Update nodes and edges in graph state
@@ -611,6 +678,10 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     selectRef.current = handleNodeSelect;
   }, [handleNodeSelect]);
 
+  React.useEffect(() => {
+    toggleCollapseRef.current = handleToggleCollapse;
+  }, [handleToggleCollapse]);
+
   // Handle editing a node's word directly in tree state
   const handleEditWord = useCallback((nodeId: string, newWord: string) => {
     const isArabic = /^[\u0600-\u06FF]/.test(newWord.trim());
@@ -657,6 +728,11 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         tone: n.data.tone,
         letter_count: n.data.letter_count,
         selected: n.data.selected,
+        // Group-node fields (undefined on regular brand nodes).
+        nodeKind: n.data.nodeKind,
+        label: n.data.label,
+        mode: n.data.mode,
+        collapsed: n.data.collapsed,
       },
     })),
     edges: edges.map((e) => ({
@@ -677,34 +753,62 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
       return false;
     }
 
-    const reconstructedNodes: Node[] = data.nodes.map((n: any) => ({
-      id: n.id,
-      type: n.type || "brandNode",
-      position: n.position,
-      data: {
-        word: n.data.word,
-        transliteration: n.data.transliteration,
-        parentId: n.data.parentId,
-        isRoot: n.data.isRoot,
-        expanded: n.data.expanded,
-        tone: n.data.tone,
-        letter_count: n.data.letter_count,
-        selected: n.data.selected,
-        isCompactMoreMenu,
-        onExpand: (nid: string, constraints: any) => {
-          if (handleExpandRef.current) {
-            handleExpandRef.current(nid, constraints);
-          }
+    const reconstructedNodes: Node[] = data.nodes.map((n: any) => {
+      if (n.data.nodeKind === "group") {
+        return {
+          id: n.id,
+          type: "groupNode",
+          position: n.position,
+          data: {
+            nodeKind: "group",
+            label: n.data.label,
+            mode: n.data.mode,
+            parentId: n.data.parentId,
+            collapsed: !!n.data.collapsed,
+            onToggleCollapse: (gid: string) => toggleCollapseRef.current?.(gid),
+          },
+        };
+      }
+      return {
+        id: n.id,
+        type: n.type || "brandNode",
+        position: n.position,
+        data: {
+          word: n.data.word,
+          transliteration: n.data.transliteration,
+          parentId: n.data.parentId,
+          isRoot: n.data.isRoot,
+          expanded: n.data.expanded,
+          tone: n.data.tone,
+          letter_count: n.data.letter_count,
+          selected: n.data.selected,
+          isCompactMoreMenu,
+          onExpand: (nid: string, constraints: any) => {
+            if (handleExpandRef.current) {
+              handleExpandRef.current(nid, constraints);
+            }
+          },
+          onSelect: (w: string, nid: string) => selectRef.current?.(w, nid),
+          onRegenerate: (nid: string, subConstraints: any) => {
+            if (regenerateRef.current) {
+              regenerateRef.current(nid, subConstraints);
+            }
+          },
+          onEditWord: (nid: string, newW: string) => handleEditWord(nid, newW),
         },
-        onSelect: (w: string, nid: string) => selectRef.current?.(w, nid),
-        onRegenerate: (nid: string, subConstraints: any) => {
-          if (regenerateRef.current) {
-            regenerateRef.current(nid, subConstraints);
-          }
-        },
-        onEditWord: (nid: string, newW: string) => handleEditWord(nid, newW),
-      },
-    }));
+      };
+    });
+
+    // Re-derive hidden state from any collapsed group nodes (descendants stay hidden).
+    const hiddenIds = new Set<string>();
+    for (const gn of reconstructedNodes) {
+      if (gn.data.nodeKind === "group" && gn.data.collapsed) {
+        for (const d of getDescendants(gn.id, reconstructedNodes)) hiddenIds.add(d);
+      }
+    }
+    reconstructedNodes.forEach((n) => {
+      if (hiddenIds.has(n.id)) n.hidden = true;
+    });
 
     const reconstructedEdges: Edge[] = (data.edges || []).map((e: any) => ({
       id: e.id,
@@ -717,6 +821,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
         strokeDasharray: isEdgeDashed ? "5, 5" : undefined,
       },
       animated: isEdgeDashed,
+      hidden: hiddenIds.has(e.target),
     }));
 
     setNodes(reconstructedNodes);
@@ -764,6 +869,7 @@ export const ExplorationTree: React.FC<ExplorationTreeProps> = ({
     // Group nodes by word; keep the shallowest (closest to root) as the parent-priority winner.
     const byWord = new Map<string, Node[]>();
     for (const node of nodes) {
+      if (node.data.nodeKind === "group") continue; // group nodes have no word to dedupe on
       const word = node.data.word as string;
       if (!byWord.has(word)) byWord.set(word, []);
       byWord.get(word)!.push(node);
